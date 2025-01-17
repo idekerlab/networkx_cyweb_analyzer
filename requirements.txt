@@ -1,0 +1,2 @@
+ndex2
+networkx>=3.0,<3.5

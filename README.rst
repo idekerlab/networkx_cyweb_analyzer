@@ -1,5 +1,5 @@
 ===================================================
-Community Detection iQuery Gene To Term Mapper
+Networkx Network Analyzer
 ===================================================
 
 This repository creates a CDAPS compatible functional enrichment Docker image using `iQuery service <http://ndexbio.org/iquery>`_

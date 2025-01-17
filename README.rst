@@ -1,5 +1,5 @@
 ===================================================
-Networkx Network Analyzer
+Networkx Cytoscape Web Network Analyzer
 ===================================================
 
 TODO

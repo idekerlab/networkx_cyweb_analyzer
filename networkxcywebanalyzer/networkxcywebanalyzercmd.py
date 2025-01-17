@@ -34,29 +34,38 @@ def _parse_arguments(desc, args):
 def analyze_network(net_cx2):
     factory = CX2NetworkXFactory()
     networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.Graph())
+    networkx_degree = networkx_graph.degree()
     net_cx2.add_network_attribute(key='average_degree',
-                                  value=str(sum(dict(networkx_graph.degree()).values()) / networkx_graph.number_of_nodes()))
+                                  value=str(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes()))
     net_cx2.add_network_attribute(key='density', value=str(nx.density(networkx_graph)))
-    # net_cx2.add_network_attribute(key='connected_components', value=str([list(comp) for comp in nx.connected_components(networkx_graph)]))
-    # net_cx2.add_network_attribute(key='degree_centrality', value=str(nx.degree_centrality(networkx_graph)))
+
     net_cx2.add_network_attribute(key='clustering_coefficient', value=str(nx.average_clustering(networkx_graph)))
 
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_degree_node_attribute(net_cx2=net_cx2, networkx_degree=networkx_graph.degree())
 
-    src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
-    add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                   src_target_map=src_target_map)
+    if len(net_cx2.get_edges()) > 0:
+        src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
+        add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                       src_target_map=src_target_map)
 
     return net_cx2.to_cx2()
 
 
 def get_source_target_tuple_map(net_cx2=None):
     """
-    Builds map (SRC, TARGET) => EDGE_ID
+    Builds map
+
+               (SRC, TARGET)
+                              => EDGE_ID
+               (TARGET, SRC)
     """
     src_target_map = {}
     for edge_id, edge in net_cx2.get_edges().items():
         src_target_map[(edge[ndex2constants.EDGE_SOURCE], edge[ndex2constants.EDGE_TARGET])] = edge_id
+        src_target_map[(edge[ndex2constants.EDGE_TARGET], edge[ndex2constants.EDGE_SOURCE])] = edge_id
+
+    return src_target_map
 def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
                                    src_target_map=None):
     """
@@ -64,6 +73,7 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
     """
     edge_betweenness = nx.edge_betweenness_centrality(networkx_graph)
     for nxedge_id, val in edge_betweenness.items():
+        sys.stderr.write(str(src_target_map) + '\n\n')
         sys.stderr.write('edge id: ' + str(nxedge_id) + ' => ' + str(val) + '\n')
         net_cx2.add_edge_attribute(edge_id=src_target_map[nxedge_id], key='betweenness_centrality',
                                    value=val, datatype=ndex2constants.DOUBLE_DATATYPE)
@@ -78,6 +88,16 @@ def add_degree_centrality_node_attribute(net_cx2=None, networkx_graph=None):
         net_cx2.add_node_attribute(node_id=int(node_id), key='degree_centrality',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
+
+def add_degree_node_attribute(net_cx2=None, networkx_degree=None):
+    """
+    Adds node degree_centraility node attribute
+    """
+    for node_degree in networkx_degree:
+        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
+        net_cx2.add_node_attribute(node_id=int(node_degree[0]), key='degree',
+                                   value=node_degree[1],
+                                   datatype=ndex2constants.INTEGER_DATATYPE)
 
 def get_cx2_net_from_input(input_path):
     net_cx2_path = os.path.abspath(input_path)

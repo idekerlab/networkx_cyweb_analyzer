@@ -131,7 +131,7 @@ def main(args):
             if theargs.outputonlycx2 is True:
                 newres = theres
             else:
-                newres = [{'action': theargs.mode,
+                newres = [{'action': 'updateNetwork',
                            'data': theres}]
             json.dump(newres, sys.stdout, indent=2)
         sys.stdout.flush()

@@ -35,14 +35,28 @@ def analyze_network(net_cx2):
     factory = CX2NetworkXFactory()
     networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.Graph())
     networkx_degree = networkx_graph.degree()
+    
     net_cx2.add_network_attribute(key='average_degree',
                                   value=str(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes()))
     net_cx2.add_network_attribute(key='density', value=str(nx.density(networkx_graph)))
 
-    net_cx2.add_network_attribute(key='clustering_coefficient', value=str(nx.average_clustering(networkx_graph)))
+    net_cx2.add_network_attribute(key='diameter', value=str(nx.diameter(networkx_graph)))
 
-    add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    net_cx2.add_network_attribute(key='average_clustering_coefficient', value=str(nx.average_clustering(networkx_graph)))
+
+    net_cx2.add_network_attribute(key='average_shortest_path', value=str(nx.average_shortest_path_length(networkx_graph)))
+
+    net_cx2.add_network_attribute(key='transitivity', value=str(nx.transitivity(networkx_graph)))
+
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degree=networkx_graph.degree())
+    add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_eccentricity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    
+    net_cx2.add_network_attribute(key='diameter (max eccentricity)', value=str(max(eccentricity.values()))
 
     if len(net_cx2.get_edges()) > 0:
         src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
@@ -66,10 +80,11 @@ def get_source_target_tuple_map(net_cx2=None):
         src_target_map[(edge[ndex2constants.EDGE_TARGET], edge[ndex2constants.EDGE_SOURCE])] = edge_id
 
     return src_target_map
+    
 def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
                                    src_target_map=None):
     """
-
+    Adds "edge betweenness centrality' edge attribute
     """
     edge_betweenness = nx.edge_betweenness_centrality(networkx_graph)
     for nxedge_id, val in edge_betweenness.items():
@@ -78,9 +93,20 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
         net_cx2.add_edge_attribute(edge_id=src_target_map[nxedge_id], key='betweenness_centrality',
                                    value=val, datatype=ndex2constants.DOUBLE_DATATYPE)
 
+def add_degree_node_attribute(net_cx2=None, networkx_degrees=None):
+    """
+    Adds 'node degree' node attribute
+    """
+    networkx_degree= nx.degree(networkx_graph)
+    for node_degree in networkx_degree:
+        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
+        net_cx2.add_node_attribute(node_id=int(node_degree[0]), key='degree',
+                                   value=node_degree[1],
+                                   datatype=ndex2constants.INTEGER_DATATYPE)
+        
 def add_degree_centrality_node_attribute(net_cx2=None, networkx_graph=None):
     """
-    Adds node degree_centraility node attribute
+    Adds 'node degree_centraility' node attribute
     """
     node_centrality = nx.degree_centrality(networkx_graph)
     for node_id, val in node_centrality.items():
@@ -89,15 +115,61 @@ def add_degree_centrality_node_attribute(net_cx2=None, networkx_graph=None):
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
-def add_degree_node_attribute(net_cx2=None, networkx_degree=None):
+def add_betweenness_centrality_node_attribute(net_cx2=None, networkx_graph=None):
     """
-    Adds node degree_centraility node attribute
+    Adds 'node betweenness centrality' node attribute
     """
-    for node_degree in networkx_degree:
+    betweenness_centrality = nx.betweenness_centrality(networkx_graph)
+    for node_id, val in betweenness_centrality.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_degree[0]), key='degree',
-                                   value=node_degree[1],
-                                   datatype=ndex2constants.INTEGER_DATATYPE)
+        net_cx2.add_node_attribute(node_id=int(node_id), key='betweenness_centrality',
+                                   value=val,
+                                   datatype=ndex2constants.DOUBLE_DATATYPE)
+
+def add_closeness_centrality_node_attribute(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'node closeness centrality' node attribute
+    """
+    closeness_centrality = nx.closeness_centrality(networkx_graph)
+    for node_id, val in closeness_centrality.items():
+        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
+        net_cx2.add_node_attribute(node_id=int(node_id), key='closeness_centrality',
+                                   value=val,
+                                   datatype=ndex2constants.DOUBLE_DATATYPE)
+
+def add_clustering_coeficient_node_attribute(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'node clustering coefficient' node attribute
+    """
+    clustering_coeff = nx.clustering(networkx_graph)
+    for node_id, val in clustering_coeff.items():
+        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
+        net_cx2.add_node_attribute(node_id=int(node_id), key='clustering coefficient',
+                                   value=val,
+                                   datatype=ndex2constants.DOUBLE_DATATYPE)
+
+def add_eigenvector_centrality_node_attribute(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'node eigenvector centrality' node attribute
+    """
+    eigenvector = nx.eigenvector_centrality(networkx_graph)
+    for node_id, val in eigenvector.items():
+        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
+        net_cx2.add_node_attribute(node_id=int(node_id), key='eigenvector_centrality',
+                                   value=val,
+                                   datatype=ndex2constants.DOUBLE_DATATYPE)
+
+def add_eccentricity_node_attribute(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'node eccentricity' node attribute
+    """
+    eccentricity = nx.eccentricity(networkx_graph)
+    for node_id, val in eccentricity.items():
+        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
+        net_cx2.add_node_attribute(node_id=int(node_id), key='eccentricity',
+                                   value=val,
+                                   datatype=ndex2constants.DOUBLE_DATATYPE)
+        
 
 def get_cx2_net_from_input(input_path):
     net_cx2_path = os.path.abspath(input_path)

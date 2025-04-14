@@ -48,6 +48,9 @@ def analyze_network(net_cx2):
 
     net_cx2.add_network_attribute(key='transitivity', value=str(nx.transitivity(networkx_graph)))
 
+    # Will the line below work?
+    net_cx2.add_network_attribute(key='diameter (max eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
+
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degree=networkx_graph.degree())
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
@@ -56,8 +59,8 @@ def analyze_network(net_cx2):
     add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_eccentricity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
-    net_cx2.add_network_attribute(key='diameter (max eccentricity)', value=str(max(eccentricity.values()))
-
+    # net_cx2.add_network_attribute(key='diameter (max eccentricity)', value=str(max(eccentricity.values()))
+    
     if len(net_cx2.get_edges()) > 0:
         src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
         add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,

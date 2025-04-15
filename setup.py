@@ -31,7 +31,7 @@ test_requirements = [
 setup(
     name='networkxcywebanalyzer',
     version=version,
-    description="Maps genes to terms",
+    description="Perform network analysis using NetworkX",
     long_description=readme + '\n\n' + history,
     author="Chris Churas",
     author_email='cchuras@ucsd.edu',

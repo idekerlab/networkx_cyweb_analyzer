@@ -44,12 +44,12 @@ def analyze_network(net_cx2):
 
     net_cx2.add_network_attribute(key='average_clustering_coefficient', value=str(nx.average_clustering(networkx_graph)))
 
-    net_cx2.add_network_attribute(key='average_shortest_path', value=str(nx.average_shortest_path_length(networkx_graph)))
+    net_cx2.add_network_attribute(key='average_shortest_path_lenght', value=str(nx.average_shortest_path_length(networkx_graph)))
 
     net_cx2.add_network_attribute(key='transitivity', value=str(nx.transitivity(networkx_graph)))
 
     # Will the line below work?
-    net_cx2.add_network_attribute(key='diameter (max eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
+    net_cx2.add_network_attribute(key='diameter_(max_eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
 
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degree=networkx_graph.degree())
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
@@ -147,7 +147,7 @@ def add_clustering_coeficient_node_attribute(net_cx2=None, networkx_graph=None):
     clustering_coeff = nx.clustering(networkx_graph)
     for node_id, val in clustering_coeff.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='clustering coefficient',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='clustering_coefficient',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 

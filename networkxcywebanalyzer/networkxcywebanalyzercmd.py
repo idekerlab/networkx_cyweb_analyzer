@@ -7,6 +7,7 @@ import json
 import networkx as nx
 from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory, CX2Network
 from ndex2 import constants as ndex2constants
+from itertools import combinations
 
 
 
@@ -36,30 +37,39 @@ def analyze_network(net_cx2):
     networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.Graph())
     networkx_degree = networkx_graph.degree()
     
-    net_cx2.add_network_attribute(key='average_degree',
+    net_cx2.add_network_attribute(key='Average Degree',
                                   value=str(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes()))
-    net_cx2.add_network_attribute(key='density', value=str(nx.density(networkx_graph)))
+    net_cx2.add_network_attribute(key='Density', value=str(nx.density(networkx_graph)))
 
-    net_cx2.add_network_attribute(key='diameter', value=str(nx.diameter(networkx_graph)))
+    net_cx2.add_network_attribute(key='Diameter', value=str(nx.diameter(networkx_graph)))
 
-    net_cx2.add_network_attribute(key='average_clustering_coefficient', value=str(nx.average_clustering(networkx_graph)))
+    # Will this work?
+    net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
 
-    net_cx2.add_network_attribute(key='average_shortest_path_lenght', value=str(nx.average_shortest_path_length(networkx_graph)))
+    net_cx2.add_network_attribute(key='Average Clustering Coefficient', value=str(nx.average_clustering(networkx_graph)))
 
-    net_cx2.add_network_attribute(key='transitivity', value=str(nx.transitivity(networkx_graph)))
+    net_cx2.add_network_attribute(key='Average Shortest Path Lenght', value=str(nx.average_shortest_path_length(networkx_graph)))
 
-    # Will the line below work?
-    net_cx2.add_network_attribute(key='diameter_(max_eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
+    net_cx2.add_network_attribute(key='Transitivity', value=str(nx.transitivity(networkx_graph)))
 
-    add_degree_node_attribute(net_cx2=net_cx2, networkx_degree=networkx_graph.degree())
+    add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
+    # Or use in_degree()/out_degree() for directional graphs
+    
+    # add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree()) # REMOVE
+    
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_eccentricity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_self_loops_node_attribute(net_cx2=net_cx2)
+    add_partner_of_multiedge_node_pairs_node_attribute(net_cx2=net_cx2)
     
-    # net_cx2.add_network_attribute(key='diameter (max eccentricity)', value=str(max(eccentricity.values()))
+    # net_cx2.add_network_attribute(key='Diameter (Max Eccentricity)', value=str(max(eccentricity.values()))
     
     if len(net_cx2.get_edges()) > 0:
         src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
@@ -93,19 +103,43 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
     for nxedge_id, val in edge_betweenness.items():
         sys.stderr.write(str(src_target_map) + '\n\n')
         sys.stderr.write('edge id: ' + str(nxedge_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_edge_attribute(edge_id=src_target_map[nxedge_id], key='betweenness_centrality',
+        net_cx2.add_edge_attribute(edge_id=src_target_map[nxedge_id], key='Betweenness Centrality',
                                    value=val, datatype=ndex2constants.DOUBLE_DATATYPE)
 
 def add_degree_node_attribute(net_cx2=None, networkx_degrees=None):
     """
-    Adds 'node degree' node attribute
+    Adds node degree as a node attribute to a CX2 network.
+    
+    Args:
+        net_cx2 (ndex2.cx2.CX2Network): The CX2 network to modify
+        networkx_degrees (dict or DegreeView): Node degrees from NetworkX's degree() 
+            (either dict or DegreeView object)
     """
-    networkx_degree= nx.degree(networkx_graph)
-    for node_degree in networkx_degree:
+    # Input validation
+    if net_cx2 is None or networkx_degrees is None:
+        raise ValueError("Both net_cx2 and networkx_degrees must be provided")
+    
+    # Convert DegreeView to dict if needed
+    degrees_dict = dict(networkx_degrees)
+    
+    for node_id, degree in degrees_dict.items():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Degree',
+            value=int(degree),
+            datatype=ndex2constants.INTEGER_DATATYPE
+        )
+
+#def add_degree_node_attribute(net_cx2=None, networkx_degree=None):
+    #"""
+    #Adds 'node degree' node attribute
+    #"""
+    #networkx_degree= nx.degree(networkx_graph)
+    #for node_degree in networkx_degree:
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_degree[0]), key='degree',
-                                   value=node_degree[1],
-                                   datatype=ndex2constants.INTEGER_DATATYPE)
+        #net_cx2.add_node_attribute(node_id=int(node_degree[0]), key='Degree',
+                                   #value=node_degree[1],
+                                   #datatype=ndex2constants.INTEGER_DATATYPE)
         
 def add_degree_centrality_node_attribute(net_cx2=None, networkx_graph=None):
     """
@@ -114,7 +148,7 @@ def add_degree_centrality_node_attribute(net_cx2=None, networkx_graph=None):
     node_centrality = nx.degree_centrality(networkx_graph)
     for node_id, val in node_centrality.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='degree_centrality',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='Degree Centrality',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
@@ -125,7 +159,7 @@ def add_betweenness_centrality_node_attribute(net_cx2=None, networkx_graph=None)
     betweenness_centrality = nx.betweenness_centrality(networkx_graph)
     for node_id, val in betweenness_centrality.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='betweenness_centrality',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='Betweenness Centrality',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
@@ -136,7 +170,7 @@ def add_closeness_centrality_node_attribute(net_cx2=None, networkx_graph=None):
     closeness_centrality = nx.closeness_centrality(networkx_graph)
     for node_id, val in closeness_centrality.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='closeness_centrality',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='Closeness Centrality',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
@@ -147,7 +181,7 @@ def add_clustering_coeficient_node_attribute(net_cx2=None, networkx_graph=None):
     clustering_coeff = nx.clustering(networkx_graph)
     for node_id, val in clustering_coeff.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='clustering_coefficient',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='Clustering Coefficient',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
@@ -158,7 +192,7 @@ def add_eigenvector_centrality_node_attribute(net_cx2=None, networkx_graph=None)
     eigenvector = nx.eigenvector_centrality(networkx_graph)
     for node_id, val in eigenvector.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='eigenvector_centrality',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='Eigenvector Centrality',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
@@ -169,11 +203,228 @@ def add_eccentricity_node_attribute(net_cx2=None, networkx_graph=None):
     eccentricity = nx.eccentricity(networkx_graph)
     for node_id, val in eccentricity.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_node_attribute(node_id=int(node_id), key='eccentricity',
+        net_cx2.add_node_attribute(node_id=int(node_id), key='Eccentricity',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
         
 
+def add_stress_node_attribute(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'Stress' node attribute to CX2 network by calculating:
+    - Number of shortest paths passing through each node (excluding source/target)
+    """
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+
+    # Calculate stress centrality
+    stress = {n: 0 for n in networkx_graph.nodes()}
+    all_pairs = nx.all_pairs_shortest_path(networkx_graph)
+    
+    for source, paths in all_pairs:
+        for target, path in paths.items():
+            if source != target:
+                for node in path[1:-1]:  # Exclude source and target
+                    stress[node] += 1
+
+    # Add attributes to CX2 network
+    for node_id, val in stress.items():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Stress',
+            value=int(val),  # Ensure integer
+            datatype=ndex2constants.INTEGER_DATATYPE
+        )
+
+def add_radiality_node_attribute(net_cx2=None, networkx_graph=None):
+     """
+    Adds 'node radiality' node attribute
+    """
+    # Calculate diameter (handle disconnected graphs)
+    try:
+        diameter = nx.diameter(networkx_graph)
+    except nx.NetworkXError:  # Disconnected graph
+        diameter = max([nx.diameter(subgraph) for subgraph in nx.connected_components(networkx_graph)])
+
+    # Compute radiality for each node
+    radiality = {}
+    num_nodes = len(networkx_graph.nodes())
+    
+    for node in networkx_graph.nodes():
+        try:
+            total_distance = sum(nx.shortest_path_length(networkx_graph, source=node).values())
+            radiality[node] = (diameter + 1 - (total_distance / (num_nodes - 1))) / diameter
+        except nx.NetworkXError:  # Isolated node
+            radiality[node] = 0.0  # Default value for isolated nodes
+
+    # Add radiality as node attributes to CX2 network
+    for node_id, val in radiality.items():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Radiality',
+            value=float(val),
+            datatype=ndex2constants.DOUBLE_DATATYPE
+        )
+
+def add_self_loops_node_attribute(net_cx2=None):
+    """
+    Counts self-loops for each node and adds them as node attributes in a CX2 network.
+    
+    Args:
+        net_cx2: A CX2 network object from ndex2
+        
+    Raises:
+        ValueError: If no network object is provided
+    """
+    if net_cx2 is None:
+        raise ValueError("A CX2 network object must be passed as argument to this function")
+
+    self_loop_counts = {}
+    
+    # Count self-loops
+    for _, edge in net_cx2.get_edges(): # _ replaces the edge_id variable that is unused in the code
+        if edge['s'] == edge['t']:  # Self-loop detected
+            self_loop_counts[edge['s']] = self_loop_counts.get(edge['s'], 0) + 1
+
+    # Add attributes
+    for node_id in net_cx2.get_nodes():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key="Self Loops",
+            value=self_loop_counts.get(node_id, 0),
+            datatype=ndex2constants.INTEGER_DATATYPE
+        )
+
+def add_topological_coefficient_node_attribute(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'Topological Coefficient' node attribute to CX2 network, which is a measure
+    of how interconnected a node's neighbors are with each other.
+    
+    Args:
+        net_cx2: CX2 network object
+        networkx_graph: NetworkX graph object (for efficient path calculations)
+        
+    Raises:
+        ValueError: If inputs are missing or invalid
+    """
+    # Input validation
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both CX2 network and NetworkX graph objects must be provided")
+
+    # Calculate topological coefficient for each node
+    tc = {}
+    for node in networkx_graph.nodes():
+        neighbors = list(networkx_graph.neighbors(node))
+        neighbor_pairs = list(combinations(neighbors, 2))
+        
+        if len(neighbor_pairs) == 0:
+            tc[node] = 0.0
+            continue
+            
+        shared_neighbors = 0
+        for u, v in neighbor_pairs:
+            # Count common neighbors between each neighbor pair
+            shared_neighbors += len(list(nx.common_neighbors(networkx_graph, u, v)))
+            
+        # Normalize by number of possible neighbor pairs
+        tc[node] = shared_neighbors / len(neighbor_pairs)
+
+    # Add to CX2 network
+    for node_id, value in tc.items():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Topological Coefficient',
+            value=float(value),
+            datatype=ndex2constants.DOUBLE_DATATYPE
+        )
+
+def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=None):
+    """Calculates and adds neighborhood connectivity as a node attribute to a CX2 network.
+    
+    Neighborhood connectivity measures the average degree of a node's neighbors. 
+    Higher values indicate nodes connected to well-connected neighbors (network hubs).
+    
+    Args:
+        net_cx2 (ndex2.cx2.CX2Network): The CX2 network object to modify.
+        networkx_graph (networkx.Graph): NetworkX graph for calculations.
+        
+    Raises:
+        ValueError: If networks are None, empty, or node sets mismatch.
+    """
+    # Input validation
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both network objects must be provided")
+    if len(networkx_graph) == 0 or len(net_cx2.get_nodes()) == 0:
+        raise ValueError("Networks cannot be empty")
+    if set(net_cx2.get_nodes()) != set(networkx_graph.nodes()):
+        raise ValueError("Node sets between CX2 and NetworkX graphs must match")
+
+    # Calculate neighborhood connectivity
+    nc = {}
+    for node in networkx_graph.nodes():
+        neighbors = list(networkx_graph.neighbors(node))
+        
+        if not neighbors:  # Handle isolated nodes
+            nc[node] = 0.0
+            continue
+            
+        # Calculate average neighbor degree
+        total = sum(networkx_graph.degree(n) for n in neighbors)
+        nc[node] = total / len(neighbors)
+
+    # Add to CX2 network
+    for node_id, value in nc.items():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Neighborhood Connectivity',
+            value=float(value),
+            datatype=ndex2constants.DOUBLE_DATATYPE
+        )
+
+def add_partner_of_multiedge_node_pairs_node_attribute(net_cx2=None):
+    """Calculates and adds 'Partner of Multi-edged Node Pairs' as a node attribute.
+    
+    For each node, counts how many of its neighbor pairs are connected by multiple edges.
+    This identifies nodes whose neighbors have strong/redundant connections.
+
+    Args:
+        net_cx2 (ndex2.cx2.CX2Network): The CX2 network to modify
+
+    Returns:
+        None: Modifies net_cx2 in-place by adding node attributes
+
+    Raises:
+        ValueError: If input is invalid or network is empty
+    """
+    # Input validation
+    if net_cx2 is None:
+        raise ValueError("CX2 network object must be provided")
+    if len(net_cx2.get_nodes()) == 0:
+        raise ValueError("Network cannot be empty")
+
+    # Step 1: Identify all multi-edged node pairs
+    edge_counts = defaultdict(int)
+    for edge in net_cx2.get_edges():
+        u, v = sorted((edge['s'], edge['t']))  # Sort for undirected consistency
+        edge_counts[(u, v)] += 1
+
+    multi_edge_pairs = {pair for pair, count in edge_counts.items() 
+                       if count > 1 and pair[0] != pair[1]}  # Exclude self-loops
+
+    # Step 2: Count shared multi-edge pairs per node
+    node_scores = defaultdict(int)
+    for u, v in multi_edge_pairs:
+        node_scores[u] += 1
+        node_scores[v] += 1
+
+    # Step 3: Add attributes
+    for node_id in net_cx2.get_nodes():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Partner of Multi-edged Node Pairs',
+            value=int(node_scores.get(node_id, 0)),
+            datatype=ndex2constants.INTEGER_DATATYPE
+        )
+                                       
 def get_cx2_net_from_input(input_path):
     net_cx2_path = os.path.abspath(input_path)
     factory = RawCX2NetworkFactory()

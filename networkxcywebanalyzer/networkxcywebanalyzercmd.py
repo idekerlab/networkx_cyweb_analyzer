@@ -236,7 +236,7 @@ def add_stress_node_attribute(net_cx2=None, networkx_graph=None):
         )
 
 def add_radiality_node_attribute(net_cx2=None, networkx_graph=None):
-     """
+    """
     Adds 'node radiality' node attribute
     """
     # Calculate diameter (handle disconnected graphs)

@@ -8,6 +8,7 @@ import networkx as nx
 from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory, CX2Network
 from ndex2 import constants as ndex2constants
 from itertools import combinations
+from collections import defaultdict
 
 
 
@@ -380,7 +381,7 @@ def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=No
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def add_partner_of_multiedge_node_pairs_node_attribute(net_cx2=None):
+def add_multiedge_partner_node_attribute(net_cx2=None):
     """Calculates and adds 'Partner of Multi-edged Node Pairs' as a node attribute.
     
     For each node, counts how many of its neighbor pairs are connected by multiple edges.

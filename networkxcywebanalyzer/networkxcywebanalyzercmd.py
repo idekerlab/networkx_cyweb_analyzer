@@ -68,7 +68,7 @@ def analyze_network(net_cx2):
     add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_self_loops_node_attribute(net_cx2=net_cx2)
-    add_partner_of_multiedge_node_pairs_node_attribute(net_cx2=net_cx2)
+    add_multiedge_partner_node_attribute(net_cx2=net_cx2)
     
     # net_cx2.add_network_attribute(key='Diameter (Max Eccentricity)', value=str(max(eccentricity.values()))
     

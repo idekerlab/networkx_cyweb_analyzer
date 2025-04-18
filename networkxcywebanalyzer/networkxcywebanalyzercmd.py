@@ -44,7 +44,7 @@ def analyze_network(net_cx2):
                                                                    
     net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.get_edges())))
                                                                    
-    add_avg_neighbors_net_attrib(net_cx2)
+    add_avg_neighbors_net_attrib(net_cx2=net_cx2)
     
     net_cx2.add_network_attribute(key='Average Degree',
                                   value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
@@ -59,9 +59,9 @@ def analyze_network(net_cx2):
     
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
 
-    add_heterogeneity_net_attrib(net_cx2)
+    add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
-    add_centralization_net_attrib(net_cx2)
+    add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
 

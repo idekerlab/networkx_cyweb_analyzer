@@ -469,7 +469,7 @@ def add_multiedge_partner_node_attribute(net_cx2=None):
     # Step 1: Identify all multi-edged node pairs
     edge_counts = defaultdict(int)
     for edge in net_cx2.get_edges():
-        u, v = sorted((edge['s'], edge['t']))  # Sort for undirected consistency
+        u, v = sorted(edge['s'], edge['t'])  # Sort for undirected consistency
         edge_counts[(u, v)] += 1
 
     multi_edge_pairs = {pair for pair, count in edge_counts.items() 

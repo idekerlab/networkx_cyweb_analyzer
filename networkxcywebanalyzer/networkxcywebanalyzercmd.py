@@ -446,36 +446,34 @@ def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=No
         )
 
 def add_multiedge_partner_node_attribute(net_cx2=None):
-    """Calculates and adds 'Partner of Multi-edged Node Pairs' as a node attribute.
-    
-    For each node, counts how many of its neighbor pairs are connected by multiple edges.
-    This identifies nodes whose neighbors have strong/redundant connections.
-
-    Args:
-        net_cx2 (ndex2.cx2.CX2Network): The CX2 network to modify
-
-    Returns:
-        None: Modifies net_cx2 in-place by adding node attributes
-
-    Raises:
-        ValueError: If input is invalid or network is empty
-    """
+    """Calculates and adds 'Partner of Multi-edged Node Pairs' as a node attribute."""
     # Input validation
     if net_cx2 is None:
         raise ValueError("CX2 network object must be provided")
     if len(net_cx2.get_nodes()) == 0:
         raise ValueError("Network cannot be empty")
 
-    # Step 1: Identify all multi-edged node pairs
+    # Step 1: Get edges and identify multi-edge pairs
     edge_counts = defaultdict(int)
-    for edge in net_cx2.get_edges():
-        u, v = sorted(edge['s'], edge['t'])  # Sort for undirected consistency
-        edge_counts[(u, v)] += 1
+    edges_dict = net_cx2.get_edges()  # Returns dictionary of edges
+    
+    # Check edge dictionary structure
+    if not isinstance(edges_dict, dict):
+        raise TypeError("get_edges() must return a dictionary")
+    
+    # Iterate through edge dictionary (key=edge_id, value=edge_data)
+    for edge_id, edge_data in edges_dict.items():
+        try:
+            u, v = edge_data['s'], edge_data['t']  # Access source/target from edge data
+            u, v = sorted((int(u), int(v)))  # Ensure consistent ordering
+            edge_counts[(u, v)] += 1
+        except (KeyError, TypeError) as e:
+            raise ValueError(f"Edge {edge_id} has invalid format: {str(e)}")
 
+    # Step 2: Count multi-edge partnerships (same as before)
     multi_edge_pairs = {pair for pair, count in edge_counts.items() 
-                       if count > 1 and pair[0] != pair[1]}  # Exclude self-loops
-
-    # Step 2: Count shared multi-edge pairs per node
+                       if count > 1 and pair[0] != pair[1]}
+    
     node_scores = defaultdict(int)
     for u, v in multi_edge_pairs:
         node_scores[u] += 1

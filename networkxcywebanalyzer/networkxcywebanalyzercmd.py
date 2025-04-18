@@ -346,7 +346,7 @@ def add_self_loops_node_attribute(net_cx2=None):
     self_loop_counts = {}
     
     # Count self-loops
-    for _, edge in net_cx2.get_edges(): # _ replaces the edge_id variable that is unused in the code
+    for _, edge in net_cx2.get_edges().items(): # _ replaces the edge_id variable that is unused in the code
         if edge['s'] == edge['t']:  # Self-loop detected
             self_loop_counts[edge['s']] = self_loop_counts.get(edge['s'], 0) + 1
 

@@ -133,7 +133,8 @@ def add_centralization_net_attrib(net_cx2=None, networkx_graph=None):
         value=str(round(centralization, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
-
+    
+"""
 def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
     try:
         cpl = nx.average_shortest_path_length(networkx_graph)
@@ -148,6 +149,7 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None)
             value="undefined (disconnected)",
             datatype=ndex2constants.STRING_DATATYPE
         )
+"""
 
 # EDGE-LEVEL FUNCTIONS
 

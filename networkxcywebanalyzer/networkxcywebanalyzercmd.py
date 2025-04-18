@@ -9,6 +9,7 @@ from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory, CX2Network
 from ndex2 import constants as ndex2constants
 from itertools import combinations
 from collections import defaultdict
+import numpy as np
 
 
 
@@ -37,40 +38,50 @@ def analyze_network(net_cx2):
     factory = CX2NetworkXFactory()
     networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.Graph())
     networkx_degree = networkx_graph.degree()
+
+    # Network-level metrics
+    net_cx2.add_network_attribute(key='Number of Nodes', value=str(len(net_cx2.nodes())))
+                                                                   
+    net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.edges())))
+                                                                   
+    add_avg_neighbors_net_attrib(net_cx2)
     
     net_cx2.add_network_attribute(key='Average Degree',
-                                  value=str(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes()))
-    net_cx2.add_network_attribute(key='Density', value=str(nx.density(networkx_graph)))
+                                  value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
 
     net_cx2.add_network_attribute(key='Diameter', value=str(nx.diameter(networkx_graph)))
 
-    # Will this work?
     net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
 
-    net_cx2.add_network_attribute(key='Average Clustering Coefficient', value=str(nx.average_clustering(networkx_graph)))
+    add_characteristic_path_length_net_attrib(net_cx2)
+    
+    net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(nx.average_clustering(networkx_graph), 3)))
+    
+    net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
 
-    net_cx2.add_network_attribute(key='Average Shortest Path Lenght', value=str(nx.average_shortest_path_length(networkx_graph)))
+    add_heterogeneity_net_attrib(net_cx2)
 
-    net_cx2.add_network_attribute(key='Transitivity', value=str(nx.transitivity(networkx_graph)))
+    add_centralization_net_attrib(net_cx2)
 
+    net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
+
+    # Node-level metrics
+    add_cytoscape_avg_spl(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_multiedge_partner_node_attribute(net_cx2=net_cx2)
+    add_self_loops_node_attribute(net_cx2=net_cx2)
+    add_eccentricity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
     
-    # add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree()) # REMOVE
-    
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_self_loops_node_attribute(net_cx2=net_cx2)
-    add_multiedge_partner_node_attribute(net_cx2=net_cx2)
-    
-    # net_cx2.add_network_attribute(key='Diameter (Max Eccentricity)', value=str(max(eccentricity.values()))
     
     if len(net_cx2.get_edges()) > 0:
         src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
@@ -95,6 +106,50 @@ def get_source_target_tuple_map(net_cx2=None):
 
     return src_target_map
     
+# NETWORK-LEVEL FUNCTIONS
+
+def add_avg_neighbors_net_attrib(net_cx2=None):
+    avg_deg = 2 * len(net_cx2.get_edges()) / len(net_cx2.get_nodes())
+    net_cx2.add_network_attribute(
+        key="Average Neighbors",
+        value=str(round(avg_deg, 3)),
+        datatype=ndex2constants.STRING_DATATYPE
+
+def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None):
+    degrees = [d for _, d in networkx_graph.degree()]
+    heterogeneity = np.std(degrees) / np.mean(degrees)
+    net_cx2.add_network_attribute(
+        key="Network Heterogeneity",
+        value=str(round(heterogeneity, 3)),
+        datatype=ndex2constants.STRING_DATATYPE
+    )
+        
+def add_centralization_net_attrib(net_cx2=None, networkx_graph=None):
+    degrees = [d for _, d in networkx_graph.degree()]
+    centralization = (max(degrees) - np.mean(degrees)) / (len(networkx_graph) - 1)
+    net_cx2.add_network_attribute(
+        key="Network Centralization",
+        value=str(round(centralization, 3)),
+        datatype=ndex2constants.STRING_DATATYPE
+    )
+
+def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
+    try:
+        cpl = nx.average_shortest_path_length(networkx_graph)
+        net_cx2.add_network_attribute(
+            key="Characteristic Path Length",
+            value=str(round(cpl, 3)),
+            datatype=ndex2constants.STRING_DATATYPE
+        )
+    except nx.NetworkXError:  # Disconnected graph
+        net_cx2.add_network_attribute(
+            key="Characteristic Path Length",
+            value="undefined (disconnected)",
+            datatype=ndex2constants.STRING_DATATYPE
+        )
+
+# EDGE-LEVEL FUNCTIONS
+
 def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
                                    src_target_map=None):
     """
@@ -106,6 +161,23 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
         sys.stderr.write('edge id: ' + str(nxedge_id) + ' => ' + str(val) + '\n')
         net_cx2.add_edge_attribute(edge_id=src_target_map[nxedge_id], key='Betweenness Centrality',
                                    value=val, datatype=ndex2constants.DOUBLE_DATATYPE)
+
+# NODE-LEVEL FUNCTIONS
+
+def add_cytoscape_avg_spl(net_cx2=None, networkx_graph=None):
+    """
+    Replicates Cytoscape's node-level 'AverageShortestPathLength' analysis.
+    """
+    for node in networkx_graph.nodes():
+        spl = nx.shortest_path_length(networkx_graph, source=node)
+        avg_spl = sum(spl.values()) / (len(networkx_graph) - 1)
+        
+        net_cx2.add_node_attribute(
+            node_id=int(node),
+            key='Average Shortest Path Length',
+            value=float(avg_spl),
+            datatype=ndex2constants.DOUBLE_DATATYPE
+        )
 
 def add_degree_node_attribute(net_cx2=None, networkx_degrees=None):
     """
@@ -130,17 +202,6 @@ def add_degree_node_attribute(net_cx2=None, networkx_degrees=None):
             value=int(degree),
             datatype=ndex2constants.INTEGER_DATATYPE
         )
-
-#def add_degree_node_attribute(net_cx2=None, networkx_degree=None):
-    #"""
-    #Adds 'node degree' node attribute
-    #"""
-    #networkx_degree= nx.degree(networkx_graph)
-    #for node_degree in networkx_degree:
-        # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
-        #net_cx2.add_node_attribute(node_id=int(node_degree[0]), key='Degree',
-                                   #value=node_degree[1],
-                                   #datatype=ndex2constants.INTEGER_DATATYPE)
         
 def add_degree_centrality_node_attribute(net_cx2=None, networkx_graph=None):
     """

@@ -112,7 +112,7 @@ def add_avg_neighbors_net_attrib(net_cx2=None):
     avg_deg = 2 * len(net_cx2.get_edges()) / len(net_cx2.get_nodes())
     net_cx2.add_network_attribute(
         key="Average Neighbors",
-        value=str(round(avg_deg, 3)),
+        value=str(round(avg_deg, 3))),
         datatype=ndex2constants.STRING_DATATYPE
 
 def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None):

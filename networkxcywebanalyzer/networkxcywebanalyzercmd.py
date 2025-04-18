@@ -53,7 +53,7 @@ def analyze_network(net_cx2):
 
     net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
 
-    # add_characteristic_path_length_net_attrib(net_cx2)
+    add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
     net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(nx.average_clustering(networkx_graph), 3)))
     
@@ -134,7 +134,6 @@ def add_centralization_net_attrib(net_cx2=None, networkx_graph=None):
         datatype=ndex2constants.STRING_DATATYPE
     )
     
-"""
 def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
     try:
         cpl = nx.average_shortest_path_length(networkx_graph)
@@ -149,7 +148,6 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None)
             value="undefined (disconnected)",
             datatype=ndex2constants.STRING_DATATYPE
         )
-"""
 
 # EDGE-LEVEL FUNCTIONS
 

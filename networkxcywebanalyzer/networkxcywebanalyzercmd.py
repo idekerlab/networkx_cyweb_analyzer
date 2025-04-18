@@ -40,9 +40,9 @@ def analyze_network(net_cx2):
     networkx_degree = networkx_graph.degree()
 
     # Network-level metrics
-    net_cx2.add_network_attribute(key='Number of Nodes', value=str(len(net_cx2.nodes())))
+    net_cx2.add_network_attribute(key='Number of Nodes', value=str(len(net_cx2.get_nodes())))
                                                                    
-    net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.edges())))
+    net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.get_edges())))
                                                                    
     add_avg_neighbors_net_attrib(net_cx2)
     

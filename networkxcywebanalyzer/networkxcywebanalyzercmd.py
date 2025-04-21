@@ -87,7 +87,10 @@ def analyze_network(net_cx2):
     
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    
+    # Not implemented for multigraph class
+    #add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    
     add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)

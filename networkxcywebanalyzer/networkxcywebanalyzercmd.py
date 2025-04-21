@@ -233,6 +233,30 @@ def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
+def NX radiality(net_cx2=None, networkx_graph=None):
+    D = nx.diameter(networkx_graph)
+    n = len(networkx_graph)
+    radiality_scores = {}
+    for v in networkx_graph:
+        lengths = nx.single_source_shortest_path_length(networkx_graph, v)
+        score = 0
+        for u in networkx_graph:
+            if u == v:
+                continue
+            d = lengths.get(u, float('inf'))
+            if d < float('inf'):
+                score += D + 1 - d
+        radiality_scores[v] = score / (n - 1)
+
+    # Add to CX2 (assign 0 to nodes outside largest component)
+    for node_id in net_cx2.get_nodes():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='NX Radiality',
+            value=float(radiality_scores.get(node_id, 0.0)),
+            datatype=ndex2constants.DOUBLE_DATATYPE
+        )
+
 def add_cytoscape_radiality_node_attribute(net_cx2=None, networkx_graph=None):
     """Matches Cytoscape's radiality calculation exactly."""
     if net_cx2 is None or networkx_graph is None:

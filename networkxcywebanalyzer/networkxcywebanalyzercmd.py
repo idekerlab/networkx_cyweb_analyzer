@@ -54,7 +54,8 @@ def analyze_network(net_cx2):
     net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
 
     add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    
+
+    # not implemented for multigraph class
     #net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(nx.average_clustering(networkx_graph), 3)))
     
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
@@ -64,7 +65,8 @@ def analyze_network(net_cx2):
     add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
-    net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
+    # not implemented for multigraph class
+    #net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
 
     # Node-level metrics
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)

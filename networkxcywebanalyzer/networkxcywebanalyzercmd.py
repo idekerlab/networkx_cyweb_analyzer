@@ -62,6 +62,7 @@ def analyze_network(net_cx2):
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_cytoscape_centralization_net_attrib((net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
 
@@ -110,6 +111,36 @@ def get_source_target_tuple_map(net_cx2=None):
     return src_target_map
     
 # NETWORK-LEVEL FUNCTIONS
+
+def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None):
+    """
+    Calculates and adds Network Centralization matching Cytoscape's behavior.
+    Handles both directed and undirected graphs identically to Cytoscape.
+    """
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+
+    # Convert to undirected degree (like Cytoscape)
+    if networkx_graph.is_directed():
+        degrees = [deg for _, deg in networkx_graph.degree()]  # Total degree (in + out)
+    else:
+        degrees = [deg for _, deg in networkx_graph.degree()]
+
+    N = len(degrees)
+    if N <= 1:
+        centralization = 0.0  # Avoid division by zero
+    else:
+        max_deg = max(degrees)
+        avg_deg = sum(degrees) / N
+        centralization = (max_deg - avg_deg) / (N - 1)  # Cytoscape's formula
+
+    # Add to CX2 network
+    net_cx2.add_network_attribute(
+        key="Cytoscape Network Centralization",
+        value=str(round(centralization, 3)),
+        datatype=ndex2constants.STRING_DATATYPE  # Cytoscape stores as string
+    )
+
 
 def add_avg_neighbors_net_attrib(net_cx2=None):
     avg_deg = 2 * len(net_cx2.get_edges()) / len(net_cx2.get_nodes())

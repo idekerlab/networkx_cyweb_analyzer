@@ -234,7 +234,7 @@ def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def NX_radiality_node_attribute(net_cx2=None, networkx_graph=None):
+def add_NX_radiality_node_attribute(net_cx2=None, networkx_graph=None):
     D = nx.diameter(networkx_graph)
     n = len(networkx_graph)
     radiality_scores = {}

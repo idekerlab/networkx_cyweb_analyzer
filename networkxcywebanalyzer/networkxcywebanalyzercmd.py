@@ -203,7 +203,7 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
 
 # NODE-LEVEL FUNCTIONS
 
-def add_topological_coefficient_node_attribute(net_cx2, networkx_graph):
+def add_cytoscape_topological_coefficient_node_attribute(net_cx2, networkx_graph):
     """Matches Cytoscape's topological coefficient exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")

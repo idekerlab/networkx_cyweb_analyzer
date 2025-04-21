@@ -114,25 +114,29 @@ def get_source_target_tuple_map(net_cx2=None):
 
 def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None):
     """
-    Calculates and adds Network Centralization matching Cytoscape's behavior.
-    Handles both directed and undirected graphs identically to Cytoscape.
+    Calculates network centralization EXACTLY matching Cytoscape's behavior:
+    1. Uses degree centrality (normalized degree) instead of raw degrees
+    2. Normalizes by (N-1) where N = number of nodes
+    3. Handles directed graphs by using total degree (in + out)
     """
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
-
-    # Convert to undirected degree (like Cytoscape)
+    
+    # Calculate degree centrality (normalized degree)
     if networkx_graph.is_directed():
-        degrees = [deg for _, deg in networkx_graph.degree()]  # Total degree (in + out)
+        degrees = [d for n, d in networkx_graph.degree()]  # Total degree (in + out)
     else:
-        degrees = [deg for _, deg in networkx_graph.degree()]
-
-    N = len(degrees)
+        degrees = [d for n, d in networkx_graph.degree()]
+    
+    N = len(networkx_graph.nodes())
     if N <= 1:
-        centralization = 0.0  # Avoid division by zero
+        centralization = 0.0
     else:
-        max_deg = max(degrees)
-        avg_deg = sum(degrees) / N
-        centralization = (max_deg - avg_deg) / (N - 1)  # Cytoscape's formula
+        # Normalize degrees (Cytoscape's key step)
+        normalized_degrees = [d / (N - 1) for d in degrees]
+        max_deg = max(normalized_degrees)
+        avg_deg = sum(normalized_degrees) / N
+        centralization = (max_deg - avg_deg)  # No additional normalization needed
 
     # Add to CX2 network
     net_cx2.add_network_attribute(

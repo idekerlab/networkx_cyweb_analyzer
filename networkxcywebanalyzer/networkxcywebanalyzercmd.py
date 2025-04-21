@@ -262,23 +262,24 @@ def add_cytoscape_radiality_node_attribute(net_cx2, networkx_graph):
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def add_cytoscape_stress_node_attribute(net_cx2=None, networkx_graph=None):
-    """Matches Cytoscape's stress centrality exactly."""
+def add_stress_node_attribute(net_cx2, networkx_graph):
+    """Calculates Stress Centrality matching Cytoscape's implementation exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
     
     stress = defaultdict(int)
     
-    # Key change: Include ALL shortest paths (not just one per pair)
+    # Cytoscape counts ALL shortest paths (including through endpoints)
     for source in networkx_graph.nodes():
-        paths = nx.all_pairs_shortest_path(networkx_graph)
-        for target, path in paths[source].items():
+        # Use single_source_shortest_path instead of all_pairs
+        paths = nx.single_source_shortest_path(networkx_graph, source)
+        for target, path in paths.items():
             if source == target:
-                continue
-            for node in path:  # Include endpoints
+                continue  # Skip self-paths
+            for node in path:  # Count all nodes in path (including endpoints)
                 stress[node] += 1
     
-    # Add to CX2
+    # Add to CX2 network
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),

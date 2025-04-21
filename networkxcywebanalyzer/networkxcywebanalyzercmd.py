@@ -203,7 +203,7 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
 
 # NODE-LEVEL FUNCTIONS
 
-def add_cytoscape_topological_coefficient_node_attribute(net_cx2, networkx_graph):
+def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_graph=None):
     """Matches Cytoscape's topological coefficient exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
@@ -228,12 +228,12 @@ def add_cytoscape_topological_coefficient_node_attribute(net_cx2, networkx_graph
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Topological Coefficient',
+            key='Cytoscape Topological Coefficient',
             value=float(tc.get(node_id, 0.0)),
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def add_cytoscape_radiality_node_attribute(net_cx2, networkx_graph):
+def add_cytoscape_radiality_node_attribute(net_cx2=None, networkx_graph=None):
     """Matches Cytoscape's radiality calculation exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
@@ -257,7 +257,7 @@ def add_cytoscape_radiality_node_attribute(net_cx2, networkx_graph):
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Radiality',
+            key='Cytoscape Radiality',
             value=float(radiality.get(node_id, 0.0)),
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
@@ -283,7 +283,7 @@ def add_cytoscape_stress_node_attribute(net_cx2=None, networkx_graph=None):
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Stress',
+            key='Cytoscape Stress',
             value=int(stress.get(node_id, 0)),
             datatype=ndex2constants.INTEGER_DATATYPE
         )

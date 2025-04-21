@@ -247,7 +247,7 @@ def add_NX_radiality_node_attribute(net_cx2=None, networkx_graph=None):
             d = lengths.get(u, float('inf'))
             if d < float('inf'):
                 score += D + 1 - d
-        radiality_scores[v] = score / (n - 1)
+        radiality_scores[v] = (score / (n - 1)) / D
 
     # Add to CX2 (assign 0 to nodes outside largest component)
     for node_id in net_cx2.get_nodes():

@@ -62,7 +62,7 @@ def analyze_network(net_cx2):
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_cytoscape_centralization_net_attrib((net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
 

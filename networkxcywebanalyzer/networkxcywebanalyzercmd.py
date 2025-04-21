@@ -262,7 +262,7 @@ def add_cytoscape_radiality_node_attribute(net_cx2, networkx_graph):
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def add_stress_node_attribute(net_cx2, networkx_graph):
+def add_cytoscape_stress_node_attribute(net_cx2=None, networkx_graph=None):
     """Calculates Stress Centrality matching Cytoscape's implementation exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")

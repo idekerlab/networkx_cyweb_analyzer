@@ -98,10 +98,10 @@ def analyze_network(net_cx2):
     add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
-    if len(net_cx2.get_edges()) > 0:
-        src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
-        add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                       src_target_map=src_target_map)
+    #if len(net_cx2.get_edges()) > 0:
+     #   src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
+      #  add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
+       #                                src_target_map=src_target_map)
 
     return net_cx2.to_cx2()
 

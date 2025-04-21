@@ -314,6 +314,31 @@ def add_cytoscape_stress_node_attribute(net_cx2=None, networkx_graph=None):
             datatype=ndex2constants.INTEGER_DATATYPE
         )
 
+def add_cytoscape_stress_node_attribute_2(net_cx2=None, networkx_graph=None):
+    """Calculates Stress Centrality matching Cytoscape's implementation exactly."""
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+    
+    stress = defaultdict(int)
+    
+    # Cytoscape counts ALL shortest paths (including through endpoints)
+    for source in networkx_graph.nodes():
+        # Use single_source_shortest_path instead of all_pairs
+        paths = nx.single_source_shortest_path(networkx_graph, source)
+        for target, path in paths.items():
+            if source == target:
+                continue  # Skip self-paths
+            for node in path[1:-1]:  # excluding endpoints
+                stress[node] += 1
+    
+    # Add to CX2 network
+    for node_id in net_cx2.get_nodes():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Cytoscape Stress (excl S and T)',
+            value=int(stress.get(node_id, 0)),
+            datatype=ndex2constants.INTEGER_DATATYPE
+
 def add_cytoscape_average_shortest_path_lenght(net_cx2=None, networkx_graph=None):
     """
     Replicates Cytoscape's node-level 'AverageShortestPathLength' analysis.

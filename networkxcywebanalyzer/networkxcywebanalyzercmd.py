@@ -311,7 +311,7 @@ def add_cytoscape_stress_node_attribute_2(net_cx2=None, networkx_graph=None):
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Cytoscape Stress (excl S and T)',
+            key='Cytoscape Stress (excl endpoints)',
             value=int(stress.get(node_id, 0)),
             datatype=ndex2constants.INTEGER_DATATYPE
         )

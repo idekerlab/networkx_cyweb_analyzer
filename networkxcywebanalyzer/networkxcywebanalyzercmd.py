@@ -213,12 +213,12 @@ def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_
             
         total = 0
         for u, v in combinations(neighbors, 2):
-    # Cytoscape excludes the node itself from shared neighbors
-    shared = (set(networkx_graph.neighbors(u)) & 
-             set(networkx_graph.neighbors(v))) - {node}  # Fixed parentheses
-    total += len(shared)
+            # Cytoscape excludes the node itself from shared neighbors
+            shared = (set(networkx_graph.neighbors(u)) & 
+            set(networkx_graph.neighbors(v))) - {node}  # Fixed parentheses
+            total += len(shared)
 
-tc[node] = total / (len(neighbors) * (len(neighbors) - 1) / 2)
+        tc[node] = total / (len(neighbors) * (len(neighbors) - 1) / 2)
     
     # Add to CX2 network
     for node_id in net_cx2.get_nodes():

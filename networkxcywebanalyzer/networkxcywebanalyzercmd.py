@@ -203,38 +203,38 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
 
 # NODE-LEVEL FUNCTIONS
 
-def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_graph=None):
-    """Calculates and adds Topological Coefficient matching Cytoscape."""
+def add_topological_coefficient_node_attribute(net_cx2, networkx_graph):
+    """Matches Cytoscape's topological coefficient exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
     
     tc = {}
     for node in networkx_graph.nodes():
-        neighbors = set(networkx_graph.neighbors(node)) - {node}  # Exclude self
+        neighbors = set(networkx_graph.neighbors(node)) - {node}  # Key change: exclude self
         if len(neighbors) < 2:
-            tc[node] = 0.0
+            tc[node] = 0.0  # Cytoscape returns 0 for degree < 2
             continue
             
         total = 0
         for u, v in combinations(neighbors, 2):
-            # Cytoscape excludes the node itself from shared neighbors
             shared = (set(networkx_graph.neighbors(u)) & 
-            set(networkx_graph.neighbors(v))) - {node}  # Fixed parentheses
+                     set(networkx_graph.neighbors(v))) - {node}  # Exclude self
             total += len(shared)
-
-        tc[node] = total / (len(neighbors) * (len(neighbors) - 1) / 2)
+        
+        denominator = len(neighbors) * (len(neighbors) - 1) / 2
+        tc[node] = total / denominator if denominator > 0 else 0.0
     
-    # Add to CX2 network
+    # Add to CX2
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Cytoscape Topological Coefficient',
+            key='Topological Coefficient',
             value=float(tc.get(node_id, 0.0)),
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def add_cytoscape_radiality_node_attribute(net_cx2=None, networkx_graph=None):
-    """Calculates and adds Radiality matching Cytoscape's implementation."""
+def add_cytoscape_radiality_node_attribute(net_cx2, networkx_graph):
+    """Matches Cytoscape's radiality calculation exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
     
@@ -242,47 +242,47 @@ def add_cytoscape_radiality_node_attribute(net_cx2=None, networkx_graph=None):
     largest_cc = max(nx.connected_components(networkx_graph), key=len)
     subgraph = networkx_graph.subgraph(largest_cc)
     
-    try:
-        diameter = nx.diameter(subgraph)
-    except nx.NetworkXError:
-        diameter = 0
-    
+    diameter = nx.diameter(subgraph) if len(largest_cc) > 1 else 0
     radiality = {}
-    for node in subgraph.nodes():
-        spl = nx.shortest_path_length(subgraph, source=node)
-        avg_dist = sum(spl.values()) / (len(subgraph) - 1)
-        radiality[node] = (diameter + 1 - avg_dist) / diameter if diameter > 0 else 0
     
-    # Add to CX2 network (including nodes not in largest CC as 0)
+    for node in subgraph.nodes():
+        try:
+            spl = nx.shortest_path_length(subgraph, source=node, weight='weight')  # Key change
+            avg_dist = sum(spl.values()) / (len(subgraph) - 1)
+            radiality[node] = (diameter + 1 - avg_dist) / diameter if diameter > 0 else 0
+        except (nx.NetworkXError, ZeroDivisionError):
+            radiality[node] = 0.0
+    
+    # Add to CX2 (assign 0 to nodes outside largest component)
     for node_id in net_cx2.get_nodes():
-        val = radiality.get(node_id, 0.0)
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Cytoscape Radiality',
-            value=float(val),
+            key='Radiality',
+            value=float(radiality.get(node_id, 0.0)),
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def add_cytoscape_stress_node_attribute(net_cx2=None, networkx_graph=None):
-    """Calculates and adds Stress Centrality matching Cytoscape's implementation."""
+def add_stress_node_attribute(net_cx2, networkx_graph):
+    """Matches Cytoscape's stress centrality exactly."""
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
     
     stress = defaultdict(int)
     
-    # Include all nodes in paths (including start/end)
+    # Key change: Include ALL shortest paths (not just one per pair)
     for source in networkx_graph.nodes():
-        paths = nx.shortest_path(networkx_graph, source=source)
-        for target, path in paths.items():
-            for node in path:  # Count all nodes in path
-                if node != source and node != target:  # Cytoscape excludes endpoints
-                    stress[node] += 1
+        paths = nx.all_pairs_shortest_path(networkx_graph)
+        for target, path in paths[source].items():
+            if source == target:
+                continue
+            for node in path:  # Include endpoints
+                stress[node] += 1
     
-    # Add to CX2 network
+    # Add to CX2
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Cytoscape Stress',
+            key='Stress',
             value=int(stress.get(node_id, 0)),
             datatype=ndex2constants.INTEGER_DATATYPE
         )

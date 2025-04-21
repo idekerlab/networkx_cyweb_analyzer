@@ -283,7 +283,7 @@ def add_cytoscape_stress_node_attribute(net_cx2=None, networkx_graph=None):
             datatype=ndex2constants.INTEGER_DATATYPE
         )
 
-def add_cytoscape_averageg_shortest_path_lenght(net_cx2=None, networkx_graph=None):
+def add_cytoscape_average_shortest_path_lenght(net_cx2=None, networkx_graph=None):
     """
     Replicates Cytoscape's node-level 'AverageShortestPathLength' analysis.
     """

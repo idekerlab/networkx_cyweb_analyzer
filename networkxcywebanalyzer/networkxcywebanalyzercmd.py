@@ -84,6 +84,7 @@ def analyze_network(net_cx2):
     add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_NX_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
@@ -233,7 +234,7 @@ def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 
-def NX_radiality(net_cx2=None, networkx_graph=None):
+def NX_radiality_node_attribute(net_cx2=None, networkx_graph=None):
     D = nx.diameter(networkx_graph)
     n = len(networkx_graph)
     radiality_scores = {}

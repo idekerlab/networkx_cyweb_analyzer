@@ -70,7 +70,10 @@ def analyze_network(net_cx2):
 
     # Node-level metrics
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    
+    # Not implemented for multigraph class
+    #add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    
     add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_multiedge_partner_node_attribute(net_cx2=net_cx2)
     add_self_loops_node_attribute(net_cx2=net_cx2)

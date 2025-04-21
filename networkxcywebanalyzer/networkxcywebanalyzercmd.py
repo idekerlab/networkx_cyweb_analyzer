@@ -76,6 +76,7 @@ def analyze_network(net_cx2):
     add_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_stress_node_attribute_2(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_cytoscape_stress_node_attribute_2(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
     
@@ -338,6 +339,7 @@ def add_cytoscape_stress_node_attribute_2(net_cx2=None, networkx_graph=None):
             key='Cytoscape Stress (excl S and T)',
             value=int(stress.get(node_id, 0)),
             datatype=ndex2constants.INTEGER_DATATYPE
+        )
 
 def add_cytoscape_average_shortest_path_lenght(net_cx2=None, networkx_graph=None):
     """

@@ -36,7 +36,7 @@ def _parse_arguments(desc, args):
 
 def analyze_network(net_cx2):
     factory = CX2NetworkXFactory()
-    networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.Graph())
+    networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.MultiGraph())
     networkx_degree = networkx_graph.degree()
 
     # Network-level metrics

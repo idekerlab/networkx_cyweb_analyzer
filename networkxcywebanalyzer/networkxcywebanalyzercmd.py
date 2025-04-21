@@ -74,6 +74,7 @@ def analyze_network(net_cx2):
     add_self_loops_node_attribute(net_cx2=net_cx2)
     add_eccentricity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_stress_node_attribute_2(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
@@ -445,6 +446,34 @@ def add_stress_node_attribute(net_cx2=None, networkx_graph=None):
             value=int(val),  # Ensure integer
             datatype=ndex2constants.INTEGER_DATATYPE
         )
+
+def add_stress_node_attribute_2(net_cx2=None, networkx_graph=None):
+    """
+    Adds 'Stress' node attribute to CX2 network by calculating:
+    - Number of shortest paths passing through each node (excluding source/target)
+    """
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+
+    # Calculate stress centrality
+    stress = {n: 0 for n in networkx_graph.nodes()}
+    all_pairs = nx.all_pairs_shortest_path(networkx_graph)
+    
+    for source, paths in all_pairs:
+        for target, path in paths.items():
+            if source != target:
+                for node in path:  # include source and target
+                    stress[node] += 1
+
+    # Add attributes to CX2 network
+    for node_id, val in stress.items():
+        net_cx2.add_node_attribute(
+            node_id=int(node_id),
+            key='Stress (including S & T)',
+            value=int(val),  # Ensure integer
+            datatype=ndex2constants.INTEGER_DATATYPE
+        )
+
 
 def add_radiality_node_attribute(net_cx2=None, networkx_graph=None):
     """

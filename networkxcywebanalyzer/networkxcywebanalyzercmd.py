@@ -39,36 +39,27 @@ def analyze_network(net_cx2):
     networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.MultiGraph())
     networkx_degree = networkx_graph.degree()
 
-    # Network-level metrics
-    net_cx2.add_network_attribute(key='Number of Nodes', value=str(len(net_cx2.get_nodes())))
-                                                                   
-    net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.get_edges())))
-                                                                   
+    ### Network-level metrics ###
+    net_cx2.add_network_attribute(key='Number of Nodes', value=str(len(net_cx2.get_nodes())))                                                              
+    net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.get_edges())))                                                              
     add_avg_neighbors_net_attrib(net_cx2=net_cx2)
-    
     net_cx2.add_network_attribute(key='Average Degree',
                                   value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
-
     net_cx2.add_network_attribute(key='Diameter', value=str(nx.diameter(networkx_graph)))
-
     net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
-
     add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     # not implemented for multigraph class
     #net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(nx.average_clustering(networkx_graph), 3)))
     
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
-
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-
-    add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
     # not implemented for multigraph class
     #net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
 
-    # Node-level metrics
+    ### Node-level metrics ###
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
     # Not implemented for multigraph class
@@ -92,12 +83,12 @@ def analyze_network(net_cx2):
     #add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
     add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_NX_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
+    # this needs to be fixed after switching to Mutligrpah class
+
     #if len(net_cx2.get_edges()) > 0:
      #   src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
       #  add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
@@ -241,30 +232,6 @@ def add_cytoscape_topological_coefficient_node_attribute(net_cx2=None, networkx_
             node_id=int(node_id),
             key='Cytoscape Topological Coefficient',
             value=float(tc.get(node_id, 0.0)),
-            datatype=ndex2constants.DOUBLE_DATATYPE
-        )
-
-def add_NX_radiality_node_attribute(net_cx2=None, networkx_graph=None):
-    D = nx.diameter(networkx_graph)
-    n = len(networkx_graph)
-    radiality_scores = {}
-    for v in networkx_graph:
-        lengths = nx.single_source_shortest_path_length(networkx_graph, v)
-        score = 0
-        for u in networkx_graph:
-            if u == v:
-                continue
-            d = lengths.get(u, float('inf'))
-            if d < float('inf'):
-                score += D + 1 - d
-        radiality_scores[v] = (score / (n - 1)) / D
-
-    # Add to CX2 (assign 0 to nodes outside largest component)
-    for node_id in net_cx2.get_nodes():
-        net_cx2.add_node_attribute(
-            node_id=int(node_id),
-            key='NX Radiality',
-            value=float(radiality_scores.get(node_id, 0.0)),
             datatype=ndex2constants.DOUBLE_DATATYPE
         )
 

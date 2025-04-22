@@ -334,17 +334,17 @@ def add_closeness_centrality_node_attribute(net_cx2=None, networkx_graph=None):
 def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None):
     """
     Adds node and networks attributes that are not implemented for the MultiGraph() NetworkX class.
-    This function calculates the edge weights from the MultiGraph() object and adds them to a simplified Graph() object that is then used
-    to calculate the metrics. The metrics handled in this function are:
+    The metrics handled in this function are:
     
-    - Clustering coefficient (node)
-    - Eigenvector centrality (node)
+    - Clustering coefficient (node) > simple graph, disregard multiple edges
+    - Eigenvector centrality (node) > weighted graph, accounts for multiple edges
     - Average clustering coefficient (network, pure Python implementation)
     - Transitivity (network)
     
     """
     # 1. Create a weighted Graph() object from the unweighted MultiGraph()
-    G_w = nx.Graph()
+    G_simple = nx.Graph(networkx_graph) # use this to compute clustering and match Cytsocape's logic
+    G_w = nx.Graph() # use this to compute Eigenvector using wheights
     for u, v in networkx_graph.edges():
         if G_w.has_edge(u, v):
             G_w[u][v]['weight'] += 1
@@ -352,7 +352,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None):
             G_w.add_edge(u, v, weight=1)
     
     # 2. Compute per‑node "clustering coeff" and "Eigenvector centrality", using the Graph() class and 'weight' attribute
-    clustering_coeff = nx.clustering(G_w, weight='weight')
+    clustering_coeff = nx.clustering(G_simple)
     eigenvector = nx.eigenvector_centrality(G_w, weight='weight')
     
     # 3. Compute "average clustering coefficient" and "transitivity"

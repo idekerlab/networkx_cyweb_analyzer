@@ -61,6 +61,7 @@ def analyze_network(net_cx2):
     add_self_loops_node_attribute(net_cx2=net_cx2)
     add_cytoscape_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_stress_node_attribute_2(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
     

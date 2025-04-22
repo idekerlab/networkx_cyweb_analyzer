@@ -584,10 +584,30 @@ def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None):
 
 
 def add_avg_neighbors_net_attrib(net_cx2=None):
-    avg_deg = 2 * len(net_cx2.get_edges()) / len(net_cx2.get_nodes())
+    # Get all edges and nodes
+    edges = net_cx2.get_edges()
+    nodes = net_cx2.get_nodes()
+    
+    # Track unique neighbors per node (ignoring edge multiplicities)
+    neighbor_counts = {}
+    for node in nodes:
+        neighbor_counts[node] = set()  # Using a set to avoid duplicates
+    
+    # Populate neighbor sets
+    for edge in edges:
+        source = edge['s']
+        target = edge['t']
+        neighbor_counts[source].add(target)
+        neighbor_counts[target].add(source)
+    
+    # Calculate average neighbors (unique connections)
+    total_unique_neighbors = sum(len(neighbors) for neighbors in neighbor_counts.values())
+    avg_neighbors = total_unique_neighbors / len(nodes)
+
+    # Add network attribute
     net_cx2.add_network_attribute(
         key="Average Neighbors",
-        value=str(round(avg_deg, 3)),
+        value=str(round(avg_neighbors, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
 

@@ -52,7 +52,7 @@ def analyze_network(net_cx2):
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    net_cx2.add_network_attribute(key='Connected components', value=str(len(nx.connected_components(networkx_graph))))
+    net_cx2.add_network_attribute(key='Connected components', value=str(len(list(nx.connected_components(networkx_graph)))))
 
     ### Node-level metrics ###
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)

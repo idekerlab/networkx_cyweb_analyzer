@@ -589,20 +589,15 @@ def add_avg_neighbors_net_attrib(net_cx2=None):
     nodes = net_cx2.get_nodes()
     
     # Track unique neighbors per node (ignoring edge multiplicities)
-    neighbor_counts = {}
-    for node in nodes:
-        neighbor_counts[node] = set()  # Using a set to avoid duplicates
-    
+    neighbors = {n: set() for n in nodes} # Using a set to avoid duplicates
+     
     # Populate neighbor sets
-    for edge in edges:
-        source = edge['s']
-        target = edge['t']
-        neighbor_counts[source].add(target)
-        neighbor_counts[target].add(source)
+    for edge in edges.values():
+        neighbors[edge['s']].add(edge['t'])
+        neighbors[edge['t']].add(edge['s'])
     
     # Calculate average neighbors (unique connections)
-    total_unique_neighbors = sum(len(neighbors) for neighbors in neighbor_counts.values())
-    avg_neighbors = total_unique_neighbors / len(nodes)
+    avg_neighbors = sum(len(items) for items in neighbors.values()) / len(nodes)
 
     # Add network attribute
     net_cx2.add_network_attribute(

@@ -358,7 +358,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None):
     transitivity = str(round(nx.transitivity(G_w), 3))
     
     # 4. Set network-level attributes
-    net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(avg_clustering_coeff))
+    net_cx2.add_network_attribute(key=' Avg. clustering Coefficient', value=str(avg_clustering_coeff))
     net_cx2.add_network_attribute(key='Transitivity', value=str(transitivity))
     
     # 5. Set node-level attributes
@@ -606,7 +606,7 @@ def add_avg_neighbors_net_attrib(net_cx2=None):
 
     # Add network attribute
     net_cx2.add_network_attribute(
-        key="Average Neighbors",
+        key="Avg. number of neighbors",
         value=str(round(avg_neighbors, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -633,7 +633,7 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None)
     try:
         cpl = nx.average_shortest_path_length(networkx_graph)
         net_cx2.add_network_attribute(
-            key="Characteristic Path Length",
+            key="Characteristic path length",
             value=str(round(cpl, 3)),
             datatype=ndex2constants.STRING_DATATYPE
         )

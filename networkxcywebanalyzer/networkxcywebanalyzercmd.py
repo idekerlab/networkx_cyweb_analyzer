@@ -47,6 +47,7 @@ def analyze_network(net_cx2):
                                   value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
     net_cx2.add_network_attribute(key='Diameter', value=str(nx.diameter(networkx_graph)))
     net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
+    net_cx2.add_network_attribute(key='Radius', value=str(min(nx.eccentricity(networkx_graph).values())))
     add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)

@@ -356,8 +356,8 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None):
     eigenvector = nx.eigenvector_centrality(G_w, weight='weight')
     
     # 3. Compute "average clustering coefficient", "transitivity"
-    avg_clustering_coeff = sum(clustering_coeff.values()) / len(clustering_coeff)
-    transitivity = nx.transitivity(G_w)
+    avg_clustering_coeff = str(sum(clustering_coeff.values()) / len(clustering_coeff))
+    transitivity = str(nx.transitivity(G_w))
     
     # 4. Set network-level attributes
     net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(avg_clustering_coeff), 3))

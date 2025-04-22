@@ -48,22 +48,14 @@ def analyze_network(net_cx2):
     net_cx2.add_network_attribute(key='Diameter', value=str(nx.diameter(networkx_graph)))
     net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
     add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-
-    # not implemented for multigraph class
-    #net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(nx.average_clustering(networkx_graph), 3)))
-    
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
 
-    # not implemented for multigraph class
-    #net_cx2.add_network_attribute(key='Transitivity', value=str(round(nx.transitivity(networkx_graph), 3)))
-
     ### Node-level metrics ###
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
-    # Not implemented for multigraph class
-    #add_clustering_coeficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
     add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_multiedge_partner_node_attribute(net_cx2=net_cx2)
@@ -76,130 +68,83 @@ def analyze_network(net_cx2):
     
     add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    
-    # Not implemented for multigraph class
-    #add_eigenvector_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    
     add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    
-    # this needs to be fixed after switching to Mutligrpah class
 
-    #if len(net_cx2.get_edges()) > 0:
-     #   src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
-      #  add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
-       #                                src_target_map=src_target_map)
+    if len(net_cx2.get_edges()) > 0:
+        src_target_map = get_source_target_tuple_map(net_cx2=net_cx2)
+        add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                       src_target_map=src_target_map)
 
     return net_cx2.to_cx2()
-
+    
 
 def get_source_target_tuple_map(net_cx2=None):
     """
-    Builds map
-
-               (SRC, TARGET)
-                              => EDGE_ID
-               (TARGET, SRC)
+    Builds map for both simple graphs and multigraphs.
+    
+    For simple graphs: (SRC, TARGET) => EDGE_ID
+                      (TARGET, SRC) => EDGE_ID
+    
+    For multigraphs:   (SRC, TARGET, KEY) => EDGE_ID
+                      (TARGET, SRC, KEY) => EDGE_ID
     """
     src_target_map = {}
     for edge_id, edge in net_cx2.get_edges().items():
-        src_target_map[(edge[ndex2constants.EDGE_SOURCE], edge[ndex2constants.EDGE_TARGET])] = edge_id
-        src_target_map[(edge[ndex2constants.EDGE_TARGET], edge[ndex2constants.EDGE_SOURCE])] = edge_id
+        src = edge[ndex2constants.EDGE_SOURCE]
+        target = edge[ndex2constants.EDGE_TARGET]
+        
+        # Get edge key if it exists (for multigraphs), default to 0 for simple graphs
+        edge_key = edge.get('key', 0)
+        
+        # Create both (src, target) and (target, src) mappings
+        src_target_map[(src, target, edge_key)] = edge_id
+        src_target_map[(target, src, edge_key)] = edge_id  # Reverse direction
+        
+        # Maintain backward compatibility for simple graphs
+        if edge_key == 0:  # Only add simple (u,v) mappings if this is definitely not a multigraph
+            src_target_map[(src, target)] = edge_id
+            src_target_map[(target, src)] = edge_id
 
     return src_target_map
     
-# NETWORK-LEVEL FUNCTIONS
-
-def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None):
-    """
-    Calculates network centralization EXACTLY matching Cytoscape's behavior:
-    1. Uses degree centrality (normalized degree) instead of raw degrees
-    2. Normalizes by (N-1) where N = number of nodes
-    3. Handles directed graphs by using total degree (in + out)
-    """
-    if net_cx2 is None or networkx_graph is None:
-        raise ValueError("Both net_cx2 and networkx_graph must be provided")
     
-    # Calculate degree centrality (normalized degree)
-    if networkx_graph.is_directed():
-        degrees = [d for n, d in networkx_graph.degree()]  # Total degree (in + out)
-    else:
-        degrees = [d for n, d in networkx_graph.degree()]
-    
-    N = len(networkx_graph.nodes())
-    if N <= 1:
-        centralization = 0.0
-    else:
-        # Normalize degrees (Cytoscape's key step)
-        normalized_degrees = [d / (N - 1) for d in degrees]
-        max_deg = max(normalized_degrees)
-        avg_deg = sum(normalized_degrees) / N
-        centralization = (max_deg - avg_deg)  # No additional normalization needed
-
-    # Add to CX2 network
-    net_cx2.add_network_attribute(
-        key="Cytoscape Network Centralization",
-        value=str(round(centralization, 3)),
-        datatype=ndex2constants.STRING_DATATYPE  # Cytoscape stores as string
-    )
-
-
-def add_avg_neighbors_net_attrib(net_cx2=None):
-    avg_deg = 2 * len(net_cx2.get_edges()) / len(net_cx2.get_nodes())
-    net_cx2.add_network_attribute(
-        key="Average Neighbors",
-        value=str(round(avg_deg, 3)),
-        datatype=ndex2constants.STRING_DATATYPE
-    )
-
-def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None):
-    degrees = [d for _, d in networkx_graph.degree()]
-    heterogeneity = np.std(degrees) / np.mean(degrees)
-    net_cx2.add_network_attribute(
-        key="Network Heterogeneity",
-        value=str(round(heterogeneity, 3)),
-        datatype=ndex2constants.STRING_DATATYPE
-    )
-        
-def add_centralization_net_attrib(net_cx2=None, networkx_graph=None):
-    degrees = [d for _, d in networkx_graph.degree()]
-    centralization = (max(degrees) - np.mean(degrees)) / (len(networkx_graph) - 1)
-    net_cx2.add_network_attribute(
-        key="Network Centralization",
-        value=str(round(centralization, 3)),
-        datatype=ndex2constants.STRING_DATATYPE
-    )
-    
-def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
-    try:
-        cpl = nx.average_shortest_path_length(networkx_graph)
-        net_cx2.add_network_attribute(
-            key="Characteristic Path Length",
-            value=str(round(cpl, 3)),
-            datatype=ndex2constants.STRING_DATATYPE
-        )
-    except nx.NetworkXError:  # Disconnected graph
-        net_cx2.add_network_attribute(
-            key="Characteristic Path Length",
-            value="undefined (disconnected)",
-            datatype=ndex2constants.STRING_DATATYPE
-        )
-
 # EDGE-LEVEL FUNCTIONS
 
-def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
-                                   src_target_map=None):
+def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None, src_target_map=None):
     """
-    Adds "edge betweenness centrality' edge attribute
+    Adds edge betweenness centrality, working with both Graph and MultiGraph.
     """
     edge_betweenness = nx.edge_betweenness_centrality(networkx_graph)
-    for nxedge_id, val in edge_betweenness.items():
-        sys.stderr.write(str(src_target_map) + '\n\n')
-        sys.stderr.write('edge id: ' + str(nxedge_id) + ' => ' + str(val) + '\n')
-        net_cx2.add_edge_attribute(edge_id=src_target_map[nxedge_id], key='Betweenness Centrality',
-                                   value=val, datatype=ndex2constants.DOUBLE_DATATYPE)
+    
+    for nx_edge_id, val in edge_betweenness.items():
+        # Handle both (u,v) and (u,v,k) edge identifiers
+        if len(nx_edge_id) == 2:  # Simple graph edge
+            u, v = nx_edge_id
+            lookup_keys = [(u, v), (v, u)]  # Try both directions
+        else:  # MultiGraph edge (u, v, k)
+            u, v, k = nx_edge_id
+            lookup_keys = [(u, v, k), (v, u, k)]  # Try both directions with key
+            
+        # Find the first matching key in our map
+        edge_id = None
+        for key in lookup_keys:
+            if key in src_target_map:
+                edge_id = src_target_map[key]
+                break
+                
+        if edge_id is not None:
+            net_cx2.add_edge_attribute(
+                edge_id=edge_id,
+                key='Betweenness Centrality',
+                value=val,
+                datatype=ndex2constants.DOUBLE_DATATYPE
+            )
+        else:
+            sys.stderr.write(f"Warning: Could not find mapping for edge {nx_edge_id}\n")
+
 
 # NODE-LEVEL FUNCTIONS
 
@@ -386,27 +331,51 @@ def add_closeness_centrality_node_attribute(net_cx2=None, networkx_graph=None):
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
-def add_clustering_coeficient_node_attribute(net_cx2=None, networkx_graph=None):
+def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None):
     """
-    Adds 'node clustering coefficient' node attribute
+    Adds node and networks attributes that are not implemented for the MultiGraph() NetworkX class.
+    This function calculates the edge weights from the MultiGraph() object and adds them to a simplified Graph() object that is then used
+    to calculate the metrics. The metrics handled in this function are:
+    
+    - Clustering coefficient (node)
+    - Eigenvector centrality (node)
+    - Average clustering coefficient (network, pure Python implementation)
+    - Transitivity (network)
+    
     """
-    clustering_coeff = nx.clustering(networkx_graph)
+    # 1. Create a weighted Graph() object from the unweighted MultiGraph()
+    G_w = nx.Graph()
+    for u, v in networkx_graph.edges():
+        if G_w.has_edge(u, v):
+            G_w[u][v]['weight'] += 1
+        else:
+            G_w.add_edge(u, v, weight=1)
+    
+    # 2. Compute per‑node "clustering coeff" and "Eigenvector centrality", using the Graph() class and 'weight' attribute
+    clustering_coeff = nx.clustering(G_w, weight='weight')
+    eigenvector = nx.eigenvector_centrality(G_w, weight='weight')
+    
+    # 3. Compute "average clustering coefficient", "transitivity"
+    avg_clustering_coeff = sum(clustering_coeff.values()) / len(clustering_coeff)
+    transitivity = nx.transitivity(G_w)
+    
+    # 4. Set network-level attributes
+    net_cx2.add_network_attribute(key=' Average Clustering Coefficient', value=str(round(avg_clustering_coeff), 3))
+    net_cx2.add_network_attribute(key='Transitivity', value=str(round(transitivity), 3))
+    
+    # 5. Set node-level attributes
     for node_id, val in clustering_coeff.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
         net_cx2.add_node_attribute(node_id=int(node_id), key='Clustering Coefficient',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
-def add_eigenvector_centrality_node_attribute(net_cx2=None, networkx_graph=None):
-    """
-    Adds 'node eigenvector centrality' node attribute
-    """
-    eigenvector = nx.eigenvector_centrality(networkx_graph)
     for node_id, val in eigenvector.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
         net_cx2.add_node_attribute(node_id=int(node_id), key='Eigenvector Centrality',
                                    value=val,
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
+        
 
 def add_eccentricity_node_attribute(net_cx2=None, networkx_graph=None):
     """
@@ -578,6 +547,86 @@ def add_multiedge_partner_node_attribute(net_cx2=None):
             datatype=ndex2constants.INTEGER_DATATYPE
         )
                                        
+# NETWORK-LEVEL FUNCTIONS
+
+def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None):
+    """
+    Calculates network centralization EXACTLY matching Cytoscape's behavior:
+    1. Uses degree centrality (normalized degree) instead of raw degrees
+    2. Normalizes by (N-1) where N = number of nodes
+    3. Handles directed graphs by using total degree (in + out)
+    """
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+    
+    # Calculate degree centrality (normalized degree)
+    if networkx_graph.is_directed():
+        degrees = [d for n, d in networkx_graph.degree()]  # Total degree (in + out)
+    else:
+        degrees = [d for n, d in networkx_graph.degree()]
+    
+    N = len(networkx_graph.nodes())
+    if N <= 1:
+        centralization = 0.0
+    else:
+        # Normalize degrees (Cytoscape's key step)
+        normalized_degrees = [d / (N - 1) for d in degrees]
+        max_deg = max(normalized_degrees)
+        avg_deg = sum(normalized_degrees) / N
+        centralization = (max_deg - avg_deg)  # No additional normalization needed
+
+    # Add to CX2 network
+    net_cx2.add_network_attribute(
+        key="Cytoscape Network Centralization",
+        value=str(round(centralization, 3)),
+        datatype=ndex2constants.STRING_DATATYPE  # Cytoscape stores as string
+    )
+
+
+def add_avg_neighbors_net_attrib(net_cx2=None):
+    avg_deg = 2 * len(net_cx2.get_edges()) / len(net_cx2.get_nodes())
+    net_cx2.add_network_attribute(
+        key="Average Neighbors",
+        value=str(round(avg_deg, 3)),
+        datatype=ndex2constants.STRING_DATATYPE
+    )
+
+def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None):
+    degrees = [d for _, d in networkx_graph.degree()]
+    heterogeneity = np.std(degrees) / np.mean(degrees)
+    net_cx2.add_network_attribute(
+        key="Network Heterogeneity",
+        value=str(round(heterogeneity, 3)),
+        datatype=ndex2constants.STRING_DATATYPE
+    )
+        
+def add_centralization_net_attrib(net_cx2=None, networkx_graph=None):
+    degrees = [d for _, d in networkx_graph.degree()]
+    centralization = (max(degrees) - np.mean(degrees)) / (len(networkx_graph) - 1)
+    net_cx2.add_network_attribute(
+        key="Network Centralization",
+        value=str(round(centralization, 3)),
+        datatype=ndex2constants.STRING_DATATYPE
+    )
+    
+def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
+    try:
+        cpl = nx.average_shortest_path_length(networkx_graph)
+        net_cx2.add_network_attribute(
+            key="Characteristic Path Length",
+            value=str(round(cpl, 3)),
+            datatype=ndex2constants.STRING_DATATYPE
+        )
+    except nx.NetworkXError:  # Disconnected graph
+        net_cx2.add_network_attribute(
+            key="Characteristic Path Length",
+            value="undefined (disconnected)",
+            datatype=ndex2constants.STRING_DATATYPE
+        )
+
+####### END OF METRICS #######
+
+
 def get_cx2_net_from_input(input_path):
     net_cx2_path = os.path.abspath(input_path)
     factory = RawCX2NetworkFactory()

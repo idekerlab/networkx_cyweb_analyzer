@@ -55,7 +55,7 @@ def analyze_network(net_cx2):
     ### Node-level metrics ###
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
-    add_add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph)
     
     add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_multiedge_partner_node_attribute(net_cx2=net_cx2)

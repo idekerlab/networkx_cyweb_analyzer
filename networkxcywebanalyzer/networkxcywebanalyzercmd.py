@@ -40,28 +40,25 @@ def analyze_network(net_cx2):
     networkx_degree = networkx_graph.degree()
 
     ### Network-level metrics ###
-    net_cx2.add_network_attribute(key='Number of Nodes', value=str(len(net_cx2.get_nodes())))                                                              
-    net_cx2.add_network_attribute(key='Number of Edges', value=str(len(net_cx2.get_edges())))                                                              
+    net_cx2.add_network_attribute(key='Number of nodes', value=str(len(net_cx2.get_nodes())))                                                              
+    net_cx2.add_network_attribute(key='Number of edges', value=str(len(net_cx2.get_edges())))                                                              
     add_avg_neighbors_net_attrib(net_cx2=net_cx2)
-    net_cx2.add_network_attribute(key='Average Degree',
+    net_cx2.add_network_attribute(key='Average degree',
                                   value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
-    net_cx2.add_network_attribute(key='Diameter', value=str(nx.diameter(networkx_graph)))
-    net_cx2.add_network_attribute(key='Diameter (Max. Eccentricity)', value=str(max(nx.eccentricity(networkx_graph).values())))
-    net_cx2.add_network_attribute(key='Radius', value=str(min(nx.eccentricity(networkx_graph).values())))
+
+    add_eccentricity_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph) # includes diameter and radius metrics
     add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph)
     net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    net_cx2.add_network_attribute(key='Connected components', value=str(len(nx.connected_components(networkx_graph))))
 
     ### Node-level metrics ###
     add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    
-    add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    
     add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_multiedge_partner_node_attribute(net_cx2=net_cx2)
     add_self_loops_node_attribute(net_cx2=net_cx2)
-    add_eccentricity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_cytoscape_stress_node_attribute_2(net_cx2=net_cx2, networkx_graph=networkx_graph)
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
@@ -378,17 +375,24 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None):
                                    datatype=ndex2constants.DOUBLE_DATATYPE)
         
 
-def add_eccentricity_node_attribute(net_cx2=None, networkx_graph=None):
+def add_eccentricity_attribute(net_cx2=None, networkx_graph=None):
     """
-    Adds 'node eccentricity' node attribute
+    Adds 'node eccentricity' node attribute as well as Radius and Diameter network attributes (Max and Min Eccentricities).
+    Preserves multi edges and ensures Metrics are computed on largest connected component, like Cytoscape.
     """
-    eccentricity = nx.eccentricity(networkx_graph)
-    for node_id, val in eccentricity.items():
+    largest_cc = max(nx.connected_components(networkx_graph), key=len)
+    subnetwork = networkx_graph.subgraph(largest_cc)
+    
+    eccentricities = nx.eccentricity(subnetwork)
+    
+    for node_id, val in eccentricities.items():
         # sys.stderr.write('nodeid: ' + str(node_id) + ' => ' + str(val) + '\n')
         net_cx2.add_node_attribute(node_id=int(node_id), key='Eccentricity',
                                    value=val,
                                    datatype=ndex2constants.INTEGER_DATATYPE)
 
+    net_cx2.add_network_attribute(key='Network diameter', value=str(max(eccentricities.values())))
+    net_cx2.add_network_attribute(key='Network radius', value=str(min(eccentricities.values())))
 
 def add_self_loops_node_attribute(net_cx2=None):
     """

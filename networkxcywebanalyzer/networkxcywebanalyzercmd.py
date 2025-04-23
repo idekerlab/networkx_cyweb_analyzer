@@ -316,7 +316,7 @@ def add_cytoscape_stress_node_attribute_correct_2(net_cx2=None, networkx_graph=N
     for node_id in net_cx2.get_nodes():
         net_cx2.add_node_attribute(
             node_id=int(node_id),
-            key='Cytoscape Stress (Correct)',
+            key='Cytoscape Stress (latest)',
             value=int(stress.get(node_id, 0)),
             datatype=ndex2constants.INTEGER_DATATYPE
         )

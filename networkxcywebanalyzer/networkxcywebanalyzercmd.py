@@ -60,12 +60,11 @@ def analyze_network(net_cx2):
     add_multiedge_partner_node_attribute(net_cx2=net_cx2)
     add_self_loops_node_attribute(net_cx2=net_cx2)
     
-    add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph) #exclude endpoints
-    add_cytoscape_stress_node_attribute_correct_2(net_cx2=net_cx2, networkx_graph=networkx_graph) #include endpoints
-    add_cytoscape_stress_node_attribute_3(net_cx2=net_cx2, networkx_graph=networkx_graph) #exclude endpoints
-    add_cytoscape_stress_node_attribute_4(net_cx2=net_cx2, networkx_graph=networkx_graph) #include endpoints
-    add_cytoscape_stress_node_attribute_correct_5(net_cx2=net_cx2, networkx_graph=networkx_graph) #exclude endpoints
-    add_cytoscape_stress_node_attribute_correct_6(net_cx2=net_cx2, networkx_graph=networkx_graph) #include endpoints
+    add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph) #all paths, exclude endpoints
+    add_cytoscape_stress_node_attribute_correct_2(net_cx2=net_cx2, networkx_graph=networkx_graph) #all paths, include endpoints
+    add_cytoscape_stress_node_attribute_3(net_cx2=net_cx2, networkx_graph=networkx_graph) #single source, exclude endpoints
+    add_cytoscape_stress_node_attribute_4(net_cx2=net_cx2, networkx_graph=networkx_graph) #single source, include endpoints
+    
     
     add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
@@ -324,67 +323,6 @@ def add_cytoscape_stress_node_attribute_correct_2(net_cx2=None, networkx_graph=N
             datatype=ndex2constants.INTEGER_DATATYPE
         )
 
-def add_cytoscape_stress_node_attribute_correct_5(net_cx2=None, networkx_graph=None):
-    """Calculates Stress Centrality matching Cytoscape's implementation."""
-    if net_cx2 is None or networkx_graph is None:
-        raise ValueError("Both net_cx2 and networkx_graph must be provided")
-    
-    stress = defaultdict(int)
-    
-    # Iterate over all node pairs
-    nodes = list(networkx_graph.nodes())
-    for i, source in enumerate(nodes):
-        for target in nodes[i+1:]:  # Avoid duplicate pairs (undirected)
-            if source == target:
-                continue
-            
-            # Get ALL shortest paths between source and target
-            all_paths = list(nx.single_source_shortest_path(networkx_graph, source, target))
-            
-            # For each path, count intermediate nodes
-            for path in all_paths:
-                for node in path[1:-1]:  # Exclude endpoints
-                    stress[node] += 1
-    
-    # Add to CX2 network
-    for node_id in net_cx2.get_nodes():
-        net_cx2.add_node_attribute(
-            node_id=int(node_id),
-            key='Stress last (Exclude endpoints)',
-            value=int(stress.get(node_id, 0)),
-            datatype=ndex2constants.INTEGER_DATATYPE
-        )
-
-def add_cytoscape_stress_node_attribute_correct_6(net_cx2=None, networkx_graph=None):
-    """Calculates Stress Centrality matching Cytoscape's implementation."""
-    if net_cx2 is None or networkx_graph is None:
-        raise ValueError("Both net_cx2 and networkx_graph must be provided")
-    
-    stress = defaultdict(int)
-    
-    # Iterate over all node pairs
-    nodes = list(networkx_graph.nodes())
-    for i, source in enumerate(nodes):
-        for target in nodes[i+1:]:  # Avoid duplicate pairs (undirected)
-            if source == target:
-                continue
-            
-            # Get ALL shortest paths between source and target
-            all_paths = list(nx.single_source_shortest_path(networkx_graph, source, target))
-            
-            # For each path, count intermediate nodes
-            for path in all_paths:
-                for node in path:  # Include endpoints
-                    stress[node] += 1
-    
-    # Add to CX2 network
-    for node_id in net_cx2.get_nodes():
-        net_cx2.add_node_attribute(
-            node_id=int(node_id),
-            key='Stress last (include endpoints)',
-            value=int(stress.get(node_id, 0)),
-            datatype=ndex2constants.INTEGER_DATATYPE
-        )
 
 def add_cytoscape_average_shortest_path_lenght(net_cx2=None, networkx_graph=None):
     """

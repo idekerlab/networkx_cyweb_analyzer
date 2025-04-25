@@ -43,33 +43,6 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         net_cx2 = networkxcywebanalyzercmd.get_cx2_net_from_input(sample1cx2file)
         res_cx2 = networkxcywebanalyzercmd.analyze_network(net_cx2=net_cx2)
 
-    def test_get_source_target_tuple_map_single_edge(self):
-        cx2_network = CX2Network()
-        node_one_id = cx2_network.add_node(attributes={'name': 'node 1'})
-        node_two_id = cx2_network.add_node(attributes={'name': 'node 2'})
-        edge_id = cx2_network.add_edge(source=node_one_id,
-                             target=node_two_id,
-                             attributes={'interaction': 'foo'})
-        res = networkxcywebanalyzercmd.get_source_target_tuple_map(net_cx2=cx2_network)
-        expected_res = {(node_one_id, node_two_id): {edge_id},
-                        (node_two_id, node_one_id): {edge_id}}
-        self.assertEqual(res, expected_res)
-
-    def test_get_source_target_tuple_map_multi_edge(self):
-        cx2_network = CX2Network()
-        node_one_id = cx2_network.add_node(attributes={'name': 'node 1'})
-        node_two_id = cx2_network.add_node(attributes={'name': 'node 2'})
-        edge_one_id = cx2_network.add_edge(source=node_one_id,
-                                       target=node_two_id,
-                                       attributes={'interaction': 'foo'})
-        edge_two_id = cx2_network.add_edge(source=node_two_id,
-                                           target=node_one_id,
-                                           attributes={'interaction': 'bar'})
-
-        res = networkxcywebanalyzercmd.get_source_target_tuple_map(net_cx2=cx2_network)
-        expected_res = {(node_one_id, node_two_id): {edge_one_id, edge_two_id},
-                        (node_two_id, node_one_id): {edge_two_id, edge_one_id}}
-        self.assertEqual(res, expected_res)
 
     def test_add_edge_betweeness_centrality_two_node_net_multigraph(self):
         cx2_network = CX2Network()
@@ -78,13 +51,9 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         edge_id = cx2_network.add_edge(source=node_one_id,
                                        target=node_two_id,
                                        attributes={'interaction': 'foo'})
-        factory = CX2NetworkXFactory()
-        networkx_graph = factory.get_graph(cx2_network,
-                                           networkx_graph=nx.MultiGraph())
-        src_tar_map = networkxcywebanalyzercmd.get_source_target_tuple_map(net_cx2=cx2_network)
+        networkx_graph = networkxcywebanalyzercmd.get_networkx_graph_with_keys(net_cx2=cx2_network, isdirected=False)
         networkxcywebanalyzercmd.add_edge_betweeness_centrality(net_cx2=cx2_network,
-                                                                networkx_graph=networkx_graph,
-                                                                src_target_map=src_tar_map)
+                                                                networkx_graph=networkx_graph)
         self.assertAlmostEqual(1.0,
                                cx2_network.get_edges()[0]['v']['Betweenness Centrality'])
 
@@ -95,13 +64,9 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         edge_id = cx2_network.add_edge(source=node_one_id,
                                        target=node_two_id,
                                        attributes={'interaction': 'foo'})
-        factory = CX2NetworkXFactory()
-        networkx_graph = factory.get_graph(cx2_network,
-                                           networkx_graph=nx.MultiDiGraph())
-        src_tar_map = networkxcywebanalyzercmd.get_source_target_tuple_map(net_cx2=cx2_network)
+        networkx_graph = networkxcywebanalyzercmd.get_networkx_graph_with_keys(net_cx2=cx2_network, isdirected=True)
         networkxcywebanalyzercmd.add_edge_betweeness_centrality(net_cx2=cx2_network,
-                                                                networkx_graph=networkx_graph,
-                                                                src_target_map=src_tar_map)
+                                                                networkx_graph=networkx_graph)
         self.assertAlmostEqual(0.5,
                                cx2_network.get_edges()[0]['v']['Betweenness Centrality'])
 

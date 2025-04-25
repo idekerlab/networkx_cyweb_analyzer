@@ -4,12 +4,19 @@ import os
 import sys
 import argparse
 import json
+import logging
 import networkx as nx
 from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory
 from ndex2 import constants as ndex2constants
 from networkxcywebanalyzer.node import *
 from networkxcywebanalyzer.network import *
 
+
+logger = logging.getLogger(__name__)
+
+
+LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
+             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
 
 def _parse_arguments(desc, args):
     """
@@ -26,14 +33,76 @@ def _parse_arguments(desc, args):
     parser.add_argument('--mode',
                         choices=['analyze'],
                         default='analyze',
-                        help='Mode. Default: analzye.')
+                        help='Mode. Default: analyze.')
+    parser.add_argument('--isdirected', action='store_true',
+                        help='If set, graph is considered a directed graph')
     parser.add_argument('--outputonlycx2', action='store_true',
                         help='If set just output CX2 to standard out')
+    parser.add_argument('--logconf', default=None,
+                        help='Path to python logging configuration file in '
+                             'this format: https://docs.python.org/3/library/'
+                             'logging.config.html#logging-config-fileformat '
+                             'Setting this overrides -v parameter which uses '
+                             ' default logger. (default None)')
+    parser.add_argument('--verbose', '-v', action='count', default=1,
+                        help='Increases verbosity of logger to standard '
+                             'error for log messages in this module. Messages are '
+                             'output at these python logging levels '
+                             '-v = WARNING, -vv = INFO, '
+                             '-vvv = DEBUG, -vvvv = NOTSET (default ERROR '
+                             'logging)')
     return parser.parse_args(args)
 
 
-def analyze_network(net_cx2):
+def setup_cmd_logging(args):
+    """
+    Sets up logging based on parsed command line arguments.
+    If **args.logconf** is set use that configuration otherwise look
+    at **args.verbose** and set logging for this module
+
+    This function assumes the following:
+
+    * **args.logconf** exists and is ``None`` or set to :py:class:`str`
+      containing path to logconf file
+
+    * **args.verbose** exists and is set to :py:class:`int` to one of
+      these values:
+
+      * ``0`` = no logging
+      * ``1`` = critical
+      * ``2`` = error
+      * ``3`` = warning
+      * ``4`` = info
+      * ``5`` = debug
+
+    :param args: parsed command line arguments from argparse
+    :type args: :py:class:`argparse.Namespace`
+    :raises AttributeError: If args is ``None`` or
+                            if **args.logconf** is None or missing or
+                            if **args.verbose** is None or missing
+    """
+
+    if args.logconf is None:
+        level = (50 - (10 * args.verbose))
+        logging.basicConfig(format=LOG_FORMAT,
+                            level=level)
+        logger.setLevel(level)
+        return
+
+    # logconf was set use that file
+    logging.config.fileConfig(args.logconf,
+                              disable_existing_loggers=False)
+
+
+def analyze_network(net_cx2, isdirected=False):
     factory = CX2NetworkXFactory()
+    if isdirected is True:
+        logger.debug('Creating multi di graph')
+        nxgraph = nx.MultiDiGraph()
+    else:
+        logger.debug('Creating multi graph')
+        nxgraph = nx.MultiGraph()
+
     networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.MultiGraph())
     networkx_degree = networkx_graph.degree()
 
@@ -92,65 +161,69 @@ def analyze_network(net_cx2):
 
 def get_source_target_tuple_map(net_cx2=None):
     """
-    Builds map for both simple graphs and multigraphs.
-    
-    For simple graphs: (SRC, TARGET) => EDGE_ID
-                      (TARGET, SRC) => EDGE_ID
-    
-    For multigraphs:   (SRC, TARGET, KEY) => EDGE_ID
-                      (TARGET, SRC, KEY) => EDGE_ID
+    Builds a lookup table to get CX2 network edge id by passing in a tuple
+    of (SRC, TARGET), or (TARGET, SRC) where SRC and TARGET are
+    ids of nodes in CX2 network
+
+    .. code-block::
+
+        # if a CX2Network had the following edge:
+        # {"id":5,"s":0,"t":1,"v":{"interaction":"some interaction"}}
+        # it would be mapped two these two keys:
+
+        {(0, 1): 5, (1, 0): 5}
+
+    :param net_cx2:
+    :type net_cx2: :py:class:`ndex2.cx2.CX2Network`
+    :return: Map of src target tuples to edge ids
+    :rtype: dict
     """
     src_target_map = {}
+
     for edge_id, edge in net_cx2.get_edges().items():
         src = edge[ndex2constants.EDGE_SOURCE]
         target = edge[ndex2constants.EDGE_TARGET]
-        
-        # Get edge key if it exists (for multigraphs), default to 0 for simple graphs
-        edge_key = edge.get('key', 0)
-        
-        # Create both (src, target) and (target, src) mappings
-        src_target_map[(src, target, edge_key)] = edge_id
-        src_target_map[(target, src, edge_key)] = edge_id  # Reverse direction
-        
-        # Maintain backward compatibility for simple graphs
-        if edge_key == 0:  # Only add simple (u,v) mappings if this is definitely not a multigraph
-            src_target_map[(src, target)] = edge_id
-            src_target_map[(target, src)] = edge_id
+
+        src_target_map[(src, target)] = edge_id
+        src_target_map[(target, src)] = edge_id
 
     return src_target_map
     
 
-def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None, src_target_map=None):
+def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
+                                   src_target_map=None):
     """
-    Adds edge betweenness centrality, working with both Graph and MultiGraph.
+    Adds edge betweenness centrality to **net_cx2** network
+    as an edge attribute named ``Betweenness Centrality``
+
+    :param net_cx2: Network to analyze
+    :type net_cx2: :py:class:`ndex2.cx2.CX2Network`
+    :param networkx_graph: Networkx version of network
+    :type networkx_graph: :py:class:`networkx.Graph`
+    :param src_target_map: map of (src,target) => edge id
+                                  (target,src) => edge id
+    :type src_target_map: dict
     """
     edge_betweenness = nx.edge_betweenness_centrality(networkx_graph)
-    
     for nx_edge_id, val in edge_betweenness.items():
+        src_target = None
         # Handle both (u,v) and (u,v,k) edge identifiers
         if len(nx_edge_id) == 2:  # Simple graph edge
             u, v = nx_edge_id
-            lookup_keys = [(u, v), (v, u)]  # Try both directions
         else:  # MultiGraph edge (u, v, k)
-            u, v, k = nx_edge_id
-            lookup_keys = [(u, v, k), (v, u, k)]  # Try both directions with key
-            
-        # Find the first matching key in our map
-        edge_id = None
-        for key in lookup_keys:
-            if key in src_target_map:
-                edge_id = src_target_map[key]
-                break
-                
-        if edge_id is not None:
-            net_cx2.add_edge_attribute(
-                edge_id=edge_id,
-                key='Betweenness Centrality',
-                value=val,
-                datatype=ndex2constants.DOUBLE_DATATYPE
-            )
-        else:
-            sys.stderr.write(f"Warning: Could not find mapping for edge {nx_edge_id}\n")
+            u, v, _ = nx_edge_id
+        src_target = (u, v)
+
+        if src_target not in src_target_map:
+            logger.error(f"Could not find mapping for edge {src_target}. "
+                         f"Skipping addition of attribute")
+            continue
+
+        net_cx2.add_edge_attribute(
+            edge_id=src_target_map[src_target],
+            key='Betweenness Centrality',
+            value=val,
+            datatype=ndex2constants.DOUBLE_DATATYPE)
 
 ##### END OF EDGE-LEVEL FUNCTIONS #####
 
@@ -174,12 +247,14 @@ def main(args):
     """
 
     theargs = _parse_arguments(desc, args[1:])
+    setup_cmd_logging(theargs)
     try:
         theres = None
 
         if theargs.mode == 'analyze':
             net_cx2 = get_cx2_net_from_input(theargs.input)
-            theres = analyze_network(net_cx2)
+            theres = analyze_network(net_cx2,
+                                     isdirected=theargs.isdirected)
 
         if theres is None:
             sys.stderr.write('No results\n')

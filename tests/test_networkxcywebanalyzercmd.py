@@ -51,8 +51,8 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
                              target=node_two_id,
                              attributes={'interaction': 'foo'})
         res = networkxcywebanalyzercmd.get_source_target_tuple_map(net_cx2=cx2_network)
-        expected_res = {(node_one_id, node_two_id): edge_id,
-                        (node_two_id, node_one_id): edge_id}
+        expected_res = {(node_one_id, node_two_id): {edge_id},
+                        (node_two_id, node_one_id): {edge_id}}
         self.assertEqual(res, expected_res)
 
     def test_get_source_target_tuple_map_multi_edge(self):
@@ -65,11 +65,10 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         edge_two_id = cx2_network.add_edge(source=node_two_id,
                                            target=node_one_id,
                                            attributes={'interaction': 'bar'})
+
         res = networkxcywebanalyzercmd.get_source_target_tuple_map(net_cx2=cx2_network)
-        expected_res = {(node_one_id, node_two_id): edge_one_id,
-                        (node_two_id, node_one_id): edge_one_id,
-                        (node_one_id, node_two_id): edge_two_id,
-                        (node_two_id, node_one_id): edge_two_id}
+        expected_res = {(node_one_id, node_two_id): {edge_one_id, edge_two_id},
+                        (node_two_id, node_one_id): {edge_two_id, edge_one_id}}
         self.assertEqual(res, expected_res)
 
     def test_add_edge_betweeness_centrality_two_node_net_multigraph(self):

@@ -163,7 +163,7 @@ def get_source_target_tuple_map(net_cx2=None):
     """
     Builds a lookup table to get CX2 network edge id by passing in a tuple
     of (SRC, TARGET), or (TARGET, SRC) where SRC and TARGET are
-    ids of nodes in CX2 network
+    ids of nodes in CX2 network and value is a set of edge ids
 
     .. code-block::
 
@@ -171,7 +171,7 @@ def get_source_target_tuple_map(net_cx2=None):
         # {"id":5,"s":0,"t":1,"v":{"interaction":"some interaction"}}
         # it would be mapped two these two keys:
 
-        {(0, 1): 5, (1, 0): 5}
+        {(0, 1): {5}, (1, 0): {5}}
 
     :param net_cx2:
     :type net_cx2: :py:class:`ndex2.cx2.CX2Network`
@@ -183,9 +183,12 @@ def get_source_target_tuple_map(net_cx2=None):
     for edge_id, edge in net_cx2.get_edges().items():
         src = edge[ndex2constants.EDGE_SOURCE]
         target = edge[ndex2constants.EDGE_TARGET]
-
-        src_target_map[(src, target)] = edge_id
-        src_target_map[(target, src)] = edge_id
+        if (src, target) not in src_target_map:
+            src_target_map[((src, target))] = set()
+        if (target, src) not in src_target_map:
+            src_target_map[(target, src)] = set()
+        src_target_map[(src, target)].add(edge_id)
+        src_target_map[(target, src)].add(edge_id)
 
     return src_target_map
     
@@ -207,23 +210,26 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None,
     edge_betweenness = nx.edge_betweenness_centrality(networkx_graph)
     for nx_edge_id, val in edge_betweenness.items():
         src_target = None
+        target_src = None
         # Handle both (u,v) and (u,v,k) edge identifiers
         if len(nx_edge_id) == 2:  # Simple graph edge
             u, v = nx_edge_id
         else:  # MultiGraph edge (u, v, k)
             u, v, _ = nx_edge_id
         src_target = (u, v)
+        target_src = (v, u)
 
-        if src_target not in src_target_map:
-            logger.error(f"Could not find mapping for edge {src_target}. "
-                         f"Skipping addition of attribute")
-            continue
-
-        net_cx2.add_edge_attribute(
-            edge_id=src_target_map[src_target],
-            key='Betweenness Centrality',
-            value=val,
-            datatype=ndex2constants.DOUBLE_DATATYPE)
+        for entry in [src_target, target_src]:
+            if src_target not in src_target_map:
+                logger.debug(f"Could not find mapping for edge {src_target}. "
+                             f"Skipping addition of attribute")
+                continue
+            for edge_id in src_target_map[entry]:
+                net_cx2.add_edge_attribute(
+                    edge_id=edge_id,
+                    key='Betweenness Centrality',
+                    value=val,
+                    datatype=ndex2constants.DOUBLE_DATATYPE)
 
 ##### END OF EDGE-LEVEL FUNCTIONS #####
 

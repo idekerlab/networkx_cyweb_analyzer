@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Community Detection iQuery Gene To Term Mapper's documentation!
+Welcome to Networkx Network Analyzer documentation!
 ================================================================================
 
 Contents:

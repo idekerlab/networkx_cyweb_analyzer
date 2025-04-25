@@ -3,7 +3,7 @@ from ndex2 import constants as ndex2constants
 import numpy as np
 
 
-def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None): # to review
+def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None): # must review
     """
     Calculates network centralization EXACTLY matching Cytoscape's behavior:
     1. Uses degree centrality (normalized degree) instead of raw degrees
@@ -31,13 +31,16 @@ def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None): 
 
     # Add to CX2 network
     net_cx2.add_network_attribute(
-        key="Cytoscape Network Centralization",
+        key="Network Centralization",
         value=str(round(centralization, 3)),
         datatype=ndex2constants.STRING_DATATYPE  # Cytoscape stores as string
     )
 
 
 def add_avg_neighbors_net_attrib(net_cx2=None):
+    """ Computes the 'Average number of unique neighbors' matching the method
+    used in the Cytoscape's Network Analyzer (disregards multiple edges).
+    """
     # Get all edges and nodes
     edges = net_cx2.get_edges()
     nodes = net_cx2.get_nodes()
@@ -55,7 +58,7 @@ def add_avg_neighbors_net_attrib(net_cx2=None):
 
     # Add network attribute
     net_cx2.add_network_attribute(
-        key="Avg. number of neighbors",
+        key="Avg. unique neighbors",
         value=str(round(avg_neighbors, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -72,17 +75,6 @@ def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None): # must revi
         datatype=ndex2constants.STRING_DATATYPE
     )
         
-def add_centralization_net_attrib(net_cx2=None, networkx_graph=None): # must review
-    """
-    Calculates the 'network centralization' metric
-    """
-    degrees = [d for _, d in networkx_graph.degree()]
-    centralization = (max(degrees) - np.mean(degrees)) / (len(networkx_graph) - 1)
-    net_cx2.add_network_attribute(
-        key="Network Centralization",
-        value=str(round(centralization, 3)),
-        datatype=ndex2constants.STRING_DATATYPE
-    )
     
 def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
     """

@@ -3,7 +3,8 @@ from ndex2 import constants as ndex2constants
 import numpy as np
 
 
-def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None): # must review
+def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None,
+                                            keyprefix=''): # must review
     """
     Calculates network centralization EXACTLY matching Cytoscape's behavior:
     1. Uses degree centrality (normalized degree) instead of raw degrees
@@ -31,13 +32,14 @@ def add_cytoscape_centralization_net_attrib(net_cx2=None, networkx_graph=None): 
 
     # Add to CX2 network
     net_cx2.add_network_attribute(
-        key="Network Centralization",
+        key=keyprefix + 'Network Centralization',
         value=str(round(centralization, 3)),
         datatype=ndex2constants.STRING_DATATYPE  # Cytoscape stores as string
     )
 
 
-def add_avg_neighbors_net_attrib(net_cx2=None):
+def add_avg_neighbors_net_attrib(net_cx2=None,
+                                 keyprefix=''):
     """ Computes the 'Average number of unique neighbors' matching the method
     used in the Cytoscape's Network Analyzer (disregards multiple edges).
     """
@@ -58,25 +60,27 @@ def add_avg_neighbors_net_attrib(net_cx2=None):
 
     # Add network attribute
     net_cx2.add_network_attribute(
-        key="Avg. unique neighbors",
+        key=keyprefix+ 'Avg. unique neighbors',
         value=str(round(avg_neighbors, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
 
-def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None): # must review
+def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None,
+                                 keyprefix=''): # must review
     """
     Calculates the 'network heterogeneity' metric
     """
     degrees = [d for _, d in networkx_graph.degree()]
     heterogeneity = np.std(degrees) / np.mean(degrees)
     net_cx2.add_network_attribute(
-        key="Network Heterogeneity",
+        key=keyprefix +'Network Heterogeneity',
         value=str(round(heterogeneity, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
         
     
-def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None):
+def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None,
+                                              keyprefix=''):
     """
     Computes the 'Characteristic path lenght' metric and handles cases where the network is not fully connected.
      by including calculation of the largest connected component
@@ -89,7 +93,7 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None)
         # Network is connected
         cpl = nx.average_shortest_path_length(networkx_graph)
         net_cx2.add_network_attribute(
-            key="Characteristic path length",
+            key=keyprefix + 'Characteristic path length',
             value=str(round(cpl, 3)),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -100,7 +104,7 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None)
         cpl = nx.average_shortest_path_length(subgraph)
         
         net_cx2.add_network_attribute(
-            key="Characteristic path length",
+            key=keyprefix + 'Characteristic path length',
             value=f"{round(cpl, 3)} (largest component)",
             datatype=ndex2constants.STRING_DATATYPE
         )

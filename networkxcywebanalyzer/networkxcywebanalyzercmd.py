@@ -10,6 +10,7 @@ import networkx as nx
 
 from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory
 from ndex2 import constants as ndex2constants
+import networkxcywebanalyzer
 from networkxcywebanalyzer.node import *
 from networkxcywebanalyzer.network import *
 
@@ -36,6 +37,9 @@ def _parse_arguments(desc, args):
                         choices=['analyze'],
                         default='analyze',
                         help='Mode. Default: analyze.')
+    parser.add_argument('--namespace', default='netxanalyze',
+                        help='Cytoscape namespace prefix to use, every attribute will '
+                             'have this value with :: prepended')
     parser.add_argument('--isdirected', action='store_true',
                         help='If set, graph is considered a directed graph')
     parser.add_argument('--outputonlycx2', action='store_true',
@@ -119,18 +123,15 @@ def get_networkx_graph_with_keys(net_cx2, isdirected=False):
     return networkx_graph
 
 
-def analyze_network(net_cx2, isdirected=False):
+def analyze_network(net_cx2, isdirected=False, namespace=None):
     factory = CX2NetworkXFactory()
-    if isdirected is True:
-        logger.debug('Creating multi di graph')
-        nxgraph = nx.MultiDiGraph()
-
+    if namespace is not None:
+        keyprefix = namespace + '::'
     else:
-        logger.debug('Creating multi graph')
-        nxgraph = nx.MultiGraph()
+        keyprefix = ''
 
     net_cx2.add_network_attribute(
-        key="Is Directed Network",
+        key=keyprefix + 'Is Directed Network',
         value=str(isdirected),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -139,51 +140,81 @@ def analyze_network(net_cx2, isdirected=False):
     networkx_degree = networkx_graph.degree()
 
     ### Network-level metrics ###
-    net_cx2.add_network_attribute(key='Number of nodes', value=str(len(net_cx2.get_nodes())))                                                              
-    net_cx2.add_network_attribute(key='Number of edges', value=str(len(net_cx2.get_edges())))                                                              
+    net_cx2.add_network_attribute(key=keyprefix + 'Networkx Cyweb Analyzer Version',
+                                  value=str(networkxcywebanalyzer.__version__))
+    net_cx2.add_network_attribute(key=keyprefix + 'Number of nodes',
+                                  value=str(len(net_cx2.get_nodes())))
+    net_cx2.add_network_attribute(key=keyprefix + 'Number of edges',
+                                  value=str(len(net_cx2.get_edges())))
     
-    add_avg_neighbors_net_attrib(net_cx2=net_cx2)
+    add_avg_neighbors_net_attrib(net_cx2=net_cx2, keyprefix=keyprefix)
     
-    net_cx2.add_network_attribute(key='Average degree',
+    net_cx2.add_network_attribute(key=keyprefix + 'Average degree',
                                   value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
 
-    add_eccentricity_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph) # includes diameter and radius metrics
-    add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_eccentricity_attribute(net_cx2=net_cx2,
+                               networkx_graph=networkx_graph,
+                               keyprefix=keyprefix) # includes diameter and radius metrics
+    add_characteristic_path_length_net_attrib(net_cx2=net_cx2,
+                                              networkx_graph=networkx_graph,
+                                              keyprefix=keyprefix)
+    add_multigraph_unsupported_metrics(net_cx2=net_cx2,
+                                       networkx_graph=networkx_graph,
+                                       keyprefix=keyprefix)
     
-    net_cx2.add_network_attribute(key='Density', value=str(round(nx.density(networkx_graph), 3)))
+    net_cx2.add_network_attribute(key=keyprefix + 'Density',
+                                  value=str(round(nx.density(networkx_graph), 3)))
 
-    add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                 keyprefix=keyprefix)
+    add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                            keyprefix=keyprefix)
 
-    net_cx2.add_network_attribute(key='Connected components', value=str(len(list(nx.connected_components(networkx_graph)))))
+    net_cx2.add_network_attribute(key=keyprefix + 'Connected components',
+                                  value=str(len(list(nx.connected_components(networkx_graph)))))
 
     ### Node-level metrics ###
-    add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_multiedge_partner_node_attribute(net_cx2=net_cx2)
-    add_self_loops_node_attribute(net_cx2=net_cx2)
+    add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                               keyprefix=keyprefix)
+    add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                            keyprefix=keyprefix)
+    add_multiedge_partner_node_attribute(net_cx2=net_cx2,
+                                         keyprefix=keyprefix)
+    add_self_loops_node_attribute(net_cx2=net_cx2,
+                                  keyprefix=keyprefix)
     
-    add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph) #exclude endpoints
-    add_cytoscape_stress_node_attribute_correct_2(net_cx2=net_cx2, networkx_graph=networkx_graph) #include endpoints
-    add_cytoscape_stress_node_attribute_3(net_cx2=net_cx2, networkx_graph=networkx_graph) #exclude endpoints
-    add_cytoscape_stress_node_attribute_4(net_cx2=net_cx2, networkx_graph=networkx_graph) #include endpoints
+    add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                                keyprefix=keyprefix) #exclude endpoints
+    add_cytoscape_stress_node_attribute_correct_2(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                                  keyprefix=keyprefix) #include endpoints
+    add_cytoscape_stress_node_attribute_3(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                          keyprefix=keyprefix) #exclude endpoints
+    add_cytoscape_stress_node_attribute_4(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                          keyprefix=keyprefix) #include endpoints
     
-    add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree())  # Total degree
+    add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree(),
+                              keyprefix=keyprefix)  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
     
-    add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
-    add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph)
+    add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                         keyprefix=keyprefix)
+    add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                              keyprefix=keyprefix)
+    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                                 keyprefix=keyprefix)
+    add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                           keyprefix=keyprefix)
+    add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                               keyprefix=keyprefix)
+    add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+                                                         keyprefix=keyprefix)
 
     del networkx_graph
     ### Edge-level metrics ###
     if len(net_cx2.get_edges()) > 0:
         graph_w_keys = get_networkx_graph_with_keys(net_cx2=net_cx2, isdirected=isdirected)
-        add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=graph_w_keys)
+        add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=graph_w_keys,
+                                       keyprefix=keyprefix)
         del graph_w_keys
 
     return net_cx2.to_cx2()
@@ -192,7 +223,7 @@ def analyze_network(net_cx2, isdirected=False):
 ##### EDGE-LEVEL FUNCTIONS #####
     
 
-def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None):
+def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None, keyprefix=''):
     """
     Adds edge betweenness centrality to **net_cx2** network
     as an edge attribute named ``Betweenness Centrality``
@@ -209,7 +240,7 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None):
     for nx_edge_id, val in edge_betweenness.items():
         net_cx2.add_edge_attribute(
             edge_id=nx_edge_id[2],
-            key='Betweenness Centrality',
+            key=keyprefix + 'Betweenness Centrality',
             value=val,
             datatype=ndex2constants.DOUBLE_DATATYPE)
 
@@ -242,7 +273,8 @@ def main(args):
         if theargs.mode == 'analyze':
             net_cx2 = get_cx2_net_from_input(theargs.input)
             theres = analyze_network(net_cx2,
-                                     isdirected=theargs.isdirected)
+                                     isdirected=theargs.isdirected,
+                                     namespace=theargs.namespace)
 
         if theres is None:
             sys.stderr.write('No results\n')

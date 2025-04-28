@@ -236,13 +236,21 @@ def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None, keyprefix=
                                   (target,src) => edge id
     :type src_target_map: dict
     """
-    edge_betweenness = nx.edge_betweenness_centrality(networkx_graph)
+    # Analyze only the largest connected component (LCC)
+    largest_cc = max(nx.connected_components(networkx_graph), key=len)
+    subgraph = networkx_graph.subgraph(largest_cc)
+
+    # Compute edge betweenness on the LCC
+    edge_betweenness = nx.edge_betweenness_centrality(subgraph)
+
+    # Assign values (non-LCC edges will be implicitly excluded)
     for nx_edge_id, val in edge_betweenness.items():
         net_cx2.add_edge_attribute(
-            edge_id=nx_edge_id[2],
+            edge_id=nx_edge_id[2],  # Assumes edge_id is stored in the 3rd position of the tuple
             key=keyprefix + 'Betweenness Centrality',
             value=val,
-            datatype=ndex2constants.DOUBLE_DATATYPE)
+            datatype=ndex2constants.DOUBLE_DATATYPE
+        )
 
 ##### END OF EDGE-LEVEL FUNCTIONS #####
 

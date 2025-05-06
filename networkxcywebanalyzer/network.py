@@ -123,37 +123,43 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             )
 
 def _calculate_path_length(graph, component_type=None):
-    """Shared helper for CPL (Characteristic Path Lenght) calculations
-    
+    """Shared helper for CPL (Characteristic Path Length) calculations
+
     Args:
         graph: NetworkX graph object
         component_type: None (undirected), 'WCC', or 'SCC'
-    
+
     Returns:
         tuple: (path_length, is_connected)
                path_length may be float or "undefined (single node)"
     """
+    # 1) pick the right components list & extract the subgraph
     if component_type == 'WCC':
         components = list(nx.weakly_connected_components(graph))
+        # largest weakly connected comp
+        largest = max(components, key=len)
+        # build the subgraph *and* collapse direction
+        subgraph = graph.subgraph(largest).to_undirected()
     elif component_type == 'SCC':
         components = list(nx.strongly_connected_components(graph))
-    else:  # undirected
-        components = list(nx.connected_components(graph))
-    
-    is_connected = len(components) == 1
-    
-    if is_connected:
-        try:
-            return nx.average_shortest_path_length(graph), is_connected
-        except nx.NetworkXError:
-            return "undefined (single node)", is_connected
+        largest = max(components, key=len)
+        # keep it directed
+        subgraph = graph.subgraph(largest)
     else:
+        components = list(nx.connected_components(graph))
         largest = max(components, key=len)
         subgraph = graph.subgraph(largest)
-        try:
-            return nx.average_shortest_path_length(subgraph), is_connected
-        except nx.NetworkXError:
-            return "undefined (single node)", is_connected
+
+    is_connected = (len(components) == 1)
+
+    # 2) compute the average shortest path (directed for SCC, undirected otherwise)
+    try:
+        length = nx.average_shortest_path_length(subgraph)
+    except nx.NetworkXError:
+        # this only happens if the subgraph has one node (no paths)
+        length = "undefined (single node)"
+
+    return length, is_connected
 
 def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
     """

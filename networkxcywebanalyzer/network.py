@@ -289,155 +289,116 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
     # Default case (connected graph)
     compute_and_add_metrics(net_cx2, G_simple, G_w, keyprefix)
 
-def add_density_net_attrib(net_cx2=None, networkx_graph=None, keyprefix="", density_key="Network Density"):
+def add_density_net_attrib(net_cx2=None, networkx_graph=None,
+                           keyprefix="", density_key="Network Density"):
     """
-    Calculates network density, automatically accounting for multi-edges if present.
-    - For disconnected networks, only computes density for the largest connected component (LCC/WCC/SCC).
-    - For MultiGraph/MultiDiGraph: Counts all parallel edges.
-    - For Graph/DiGraph: Standard density calculation.
-    - Rounds to 3 decimal places.
-    - Uses ndex2constants.STRING_DATATYPE.
+    Calculates network density, automatically accounting for multi‐edges if present.
+    - For disconnected networks, only computes density for the largest component
+      (LCC for undirected; WCC & SCC for directed).
+    - Rounds to 3 decimal places and stores as STRING_DATATYPE.
     """
-    if not isinstance(networkx_graph, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):
-        raise ValueError("Input must be a NetworkX Graph, DiGraph, MultiGraph, or MultiDiGraph")
+    if not isinstance(networkx_graph, (nx.Graph, nx.DiGraph,
+                                       nx.MultiGraph, nx.MultiDiGraph)):
+        raise ValueError("Input must be a NetworkX Graph/DiGraph/MultiGraph/MultiDiGraph")
     
     def compute_density(G):
         n = G.number_of_nodes()
         if n < 2:
-            return 0.0  # Avoid division by zero
-        
-        is_multi = isinstance(G, (nx.MultiGraph, nx.MultiDiGraph))
-        if is_multi:
-            actual_edges = sum(len(data) for _, _, data in G.edges(data=True))
-        else:
-            actual_edges = G.number_of_edges()
-        
-        max_edges = n * (n - 1) if G.is_directed() else n * (n - 1) / 2
+            return 0.0
+        actual_edges = G.number_of_edges()  # includes all parallel edges/arcs
+        max_edges = (n * (n - 1)) if G.is_directed() else (n * (n - 1) / 2)
         return actual_edges / max_edges if max_edges > 0 else 0.0
-    
-    is_undirected = not networkx_graph.is_directed()
-    is_connected = (
-        nx.is_connected(networkx_graph) if is_undirected 
-        else nx.is_strongly_connected(networkx_graph)
-    )
-    
-    # Skip global density if disconnected
-    if is_connected:
-        global_density = compute_density(networkx_graph)
+
+    directed = networkx_graph.is_directed()
+    connected = (nx.is_strongly_connected(networkx_graph)
+                 if directed else nx.is_connected(networkx_graph))
+
+    if connected:
+        d = round(compute_density(networkx_graph), 3)
         net_cx2.add_network_attribute(
             key=f"{keyprefix}{density_key}",
-            value=str(round(global_density, 3)),
+            value=str(d),
             datatype=ndex2constants.STRING_DATATYPE
         )
     else:
-        if is_undirected:
-            # Undirected: Compute LCC density only
+        if not directed:
             lcc = max(nx.connected_components(networkx_graph), key=len)
-            lcc_subgraph = networkx_graph.subgraph(lcc)
-            lcc_density = compute_density(lcc_subgraph)
+            d = round(compute_density(networkx_graph.subgraph(lcc)), 3)
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}{density_key} (LCC)",
-                value=str(round(lcc_density, 3)),
+                value=str(d),
                 datatype=ndex2constants.STRING_DATATYPE
             )
         else:
-            # Directed: Compute WCC and SCC density only
             wcc = max(nx.weakly_connected_components(networkx_graph), key=len)
             scc = max(nx.strongly_connected_components(networkx_graph), key=len)
-            
-            wcc_subgraph = networkx_graph.subgraph(wcc)
-            scc_subgraph = networkx_graph.subgraph(scc)
-            
-            wcc_density = compute_density(wcc_subgraph)
-            scc_density = compute_density(scc_subgraph)
-            
+            d_w = round(compute_density(networkx_graph.subgraph(wcc)), 3)
+            d_s = round(compute_density(networkx_graph.subgraph(scc)), 3)
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}{density_key} (WCC)",
-                value=str(round(wcc_density, 3)),
+                value=str(d_w),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}{density_key} (SCC)",
-                value=str(round(scc_density, 3)),
+                value=str(d_s),
                 datatype=ndex2constants.STRING_DATATYPE
             )
 
 def add_centralization_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
     """
-    Calculates network centralization matching Cytoscape's behavior.
-    - For disconnected networks, only computes centralization for the largest connected component (LCC/WCC/SCC).
-    - MultiGraph/MultiDiGraph-aware (counts multi-edges).
-    - Rounds to 3 decimal places.
-    - Uses ndex2constants.STRING_DATATYPE.
+    Calculates network centralization matching Cytoscape’s behavior.
+    - For disconnected networks, only computes on the largest component.
+    - Counts multi‐edges/arcs via G.degree().
+    - Rounds to 3 decimal places and stores as STRING_DATATYPE.
     """
-    if not isinstance(networkx_graph, (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)):
-        raise ValueError("Input must be a NetworkX Graph, DiGraph, MultiGraph, or MultiDiGraph")
+    if not isinstance(networkx_graph, (nx.Graph, nx.DiGraph,
+                                       nx.MultiGraph, nx.MultiDiGraph)):
+        raise ValueError("Input must be a NetworkX Graph/DiGraph/MultiGraph/MultiDiGraph")
     
     def compute_centralization(G):
         N = G.number_of_nodes()
-        if N <= 1:
+        if N < 2:
             return 0.0
-        
-        if isinstance(G, (nx.MultiGraph, nx.MultiDiGraph)):
-            if G.is_directed():
-                degrees = [sum(len(data) for _, _, data in G.edges(n, data=True)) 
-                         + sum(len(data) for _, _, data in G.in_edges(n, data=True)) 
-                         for n in G.nodes()]
-            else:
-                degrees = [sum(len(data) for _, _, data in G.edges(n, data=True)) 
-                         for n in G.nodes()]
-        else:
-            degrees = [d for _, d in G.degree()]
-        
-        normalized_degrees = [d / (N - 1) for d in degrees]
-        max_deg = max(normalized_degrees)
-        avg_deg = sum(normalized_degrees) / N
-        return max_deg - avg_deg
-    
-    is_undirected = not networkx_graph.is_directed()
-    is_connected = (
-        nx.is_connected(networkx_graph) if is_undirected 
-        else nx.is_strongly_connected(networkx_graph)
-    )
-    
-    # Skip global centralization if disconnected
-    if is_connected:
-        global_centralization = compute_centralization(networkx_graph)
+        # total degree for each node (in+out if directed)
+        degrees = [d for _, d in G.degree()]
+        # normalize by max possible (N-1)
+        norm = [d / (N - 1) for d in degrees]
+        return max(norm) - (sum(norm) / N)
+
+    directed = networkx_graph.is_directed()
+    connected = (nx.is_strongly_connected(networkx_graph)
+                 if directed else nx.is_connected(networkx_graph))
+
+    if connected:
+        c = round(compute_centralization(networkx_graph), 3)
         net_cx2.add_network_attribute(
             key=f"{keyprefix}Network Centralization",
-            value=str(round(global_centralization, 3)),
+            value=str(c),
             datatype=ndex2constants.STRING_DATATYPE
         )
     else:
-        if is_undirected:
-            # Undirected: Compute LCC centralization only
+        if not directed:
             lcc = max(nx.connected_components(networkx_graph), key=len)
-            lcc_subgraph = networkx_graph.subgraph(lcc)
-            lcc_centralization = compute_centralization(lcc_subgraph)
+            c = round(compute_centralization(networkx_graph.subgraph(lcc)), 3)
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}Network Centralization (LCC)",
-                value=str(round(lcc_centralization, 3)),
+                value=str(c),
                 datatype=ndex2constants.STRING_DATATYPE
             )
         else:
-            # Directed: Compute WCC and SCC centralization only
             wcc = max(nx.weakly_connected_components(networkx_graph), key=len)
             scc = max(nx.strongly_connected_components(networkx_graph), key=len)
-            
-            wcc_subgraph = networkx_graph.subgraph(wcc)
-            scc_subgraph = networkx_graph.subgraph(scc)
-            
-            wcc_centralization = compute_centralization(wcc_subgraph)
-            scc_centralization = compute_centralization(scc_subgraph)
-            
+            c_w = round(compute_centralization(networkx_graph.subgraph(wcc)), 3)
+            c_s = round(compute_centralization(networkx_graph.subgraph(scc)), 3)
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}Network Centralization (WCC)",
-                value=str(round(wcc_centralization, 3)),
+                value=str(c_w),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}Network Centralization (SCC)",
-                value=str(round(scc_centralization, 3)),
+                value=str(c_s),
                 datatype=ndex2constants.STRING_DATATYPE
             )
 

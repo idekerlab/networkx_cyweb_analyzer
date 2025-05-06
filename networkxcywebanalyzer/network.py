@@ -484,28 +484,28 @@ def add_connected_components_net_attrib(net_cx2=None, networkx_graph=None, keypr
     
     if networkx_graph.is_directed():
         # Handle directed case
-        wccs = list(nx.weakly_connected_components(networkx_graph))
-        sccs = list(nx.strongly_connected_components(networkx_graph))
+        wccs = nx.number_weakly_connected_components(networkx_graph)
+        sccs = nx.number_strongly_connected_components(networkx_graph)
         
-        if len(wccs) > 1:
+        if wccs > 1:
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}Connected components (WCCs)",
-                value=str(len(wccs)),
+                value=str(wccs),
                 datatype=ndex2constants.STRING_DATATYPE
             )
         
-        if len(sccs) > 1:
+        if sccs > 1:
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}Connected components (SCCs)",
-                value=str(len(sccs)),
+                value=str(sccs),
                 datatype=ndex2constants.STRING_DATATYPE
             )
     else:
         # Handle undirected case
-        components = list(nx.connected_components(networkx_graph))
-        if len(components) > 1:
+        components = nx.number_connected_components(networkx_graph)
+        if components > 1:
             net_cx2.add_network_attribute(
                 key=f"{keyprefix}Connected components",
-                value=str(len(components)),
+                value=str(components),
                 datatype=ndex2constants.STRING_DATATYPE
             )

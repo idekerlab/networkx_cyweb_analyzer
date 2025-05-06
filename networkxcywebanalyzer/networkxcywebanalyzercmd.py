@@ -11,8 +11,9 @@ import networkx as nx
 from ndex2.cx2 import RawCX2NetworkFactory, CX2NetworkXFactory
 from ndex2 import constants as ndex2constants
 import networkxcywebanalyzer
-from networkxcywebanalyzer.node import *
 from networkxcywebanalyzer.network import *
+from networkxcywebanalyzer.node import *
+from networkxcywebanalyzer.edge import *
 
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def _parse_arguments(desc, args):
                         choices=['analyze'],
                         default='analyze',
                         help='Mode. Default: analyze.')
-    parser.add_argument('--namespace', default='netxanalyze',
+    parser.add_argument('--namespace', default='NXA',
                         help='Cytoscape namespace prefix to use, every attribute will '
                              'have this value with :: prepended')
     parser.add_argument('--isdirected', action='store_true',
@@ -136,117 +137,76 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
         datatype=ndex2constants.STRING_DATATYPE
     )
 
-    networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.MultiGraph())
+    #networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.MultiGraph()) # Why do we set MultiGraph here??? This way we automatically make networkx_graph an undirected graph, even if it is directed, right?
+    networkx_graph = get_networkx_graph_with_keys(net_cx2=net_cx2, isdirected=isdirected)
     networkx_degree = networkx_graph.degree()
 
-    ### Network-level metrics ###
-    net_cx2.add_network_attribute(key=keyprefix + 'Networkx Cyweb Analyzer Version',
-                                  value=str(networkxcywebanalyzer.__version__))
-    net_cx2.add_network_attribute(key=keyprefix + 'Number of nodes',
-                                  value=str(len(net_cx2.get_nodes())))
-    net_cx2.add_network_attribute(key=keyprefix + 'Number of edges',
-                                  value=str(len(net_cx2.get_edges())))
+    ### Calls for Network-level metrics ###
+    add_number_of_nodes(net_cx2=net_cx2, keyprefix=keyprefix)
     
-    add_avg_neighbors_net_attrib(net_cx2=net_cx2, keyprefix=keyprefix)
+    add_number_of_edges(net_cx2=net_cx2, keyprefix=keyprefix)
     
+    add_avg_neighbors_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) # includes calculation of components coverage (node %, etc)
+        
     net_cx2.add_network_attribute(key=keyprefix + 'Average degree',
                                   value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
 
     add_eccentricity_attribute(net_cx2=net_cx2,
                                networkx_graph=networkx_graph,
                                keyprefix=keyprefix) # includes diameter and radius metrics
-    add_characteristic_path_length_net_attrib(net_cx2=net_cx2,
-                                              networkx_graph=networkx_graph,
-                                              keyprefix=keyprefix)
+    
+    if networkx_graph.is_directed():
+        add_characteristic_path_length_net_attrib_directed(net_cx2=net_cx2,
+                               networkx_graph=networkx_graph,
+                               keyprefix=keyprefix)
+    else:
+        add_characteristic_path_length_net_attrib(net_cx2=net_cx2,
+                               networkx_graph=networkx_graph,
+                               keyprefix=keyprefix)
+    
     add_multigraph_unsupported_metrics(net_cx2=net_cx2,
                                        networkx_graph=networkx_graph,
                                        keyprefix=keyprefix)
     
-    net_cx2.add_network_attribute(key=keyprefix + 'Density',
-                                  value=str(round(nx.density(networkx_graph), 3)))
+    add_density_net_attrib(net_cx2=net_cx2,
+                                       networkx_graph=networkx_graph,
+                                       keyprefix=keyprefix)
 
     add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
                                  keyprefix=keyprefix)
-    add_cytoscape_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
+    
+    add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
                                             keyprefix=keyprefix)
 
-    net_cx2.add_network_attribute(key=keyprefix + 'Connected components',
-                                  value=str(len(list(nx.connected_components(networkx_graph)))))
-
-    ### Node-level metrics ###
-    add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                               keyprefix=keyprefix)
-    add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
+    add_connected_components_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
                                             keyprefix=keyprefix)
-    add_multiedge_partner_node_attribute(net_cx2=net_cx2,
-                                         keyprefix=keyprefix)
-    add_self_loops_node_attribute(net_cx2=net_cx2,
-                                  keyprefix=keyprefix)
+
+    ### Calls for Node-level metrics ###
+    #add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_multiedge_partner_node_attribute(net_cx2=net_cx2, keyprefix=keyprefix)
+    #add_self_loops_node_attribute(net_cx2=net_cx2, keyprefix=keyprefix)
     
-    add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                                keyprefix=keyprefix) #exclude endpoints
+    #add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #exclude endpoints
     
-    add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree(),
-                              keyprefix=keyprefix)  # Total degree
+    #add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree(), keyprefix=keyprefix)  # Total degree
     # Or use in_degree()/out_degree() for directional graphs
     
-    add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                         keyprefix=keyprefix)
-    add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                              keyprefix=keyprefix)
-    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                                 keyprefix=keyprefix)
-    add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                           keyprefix=keyprefix)
-    add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                               keyprefix=keyprefix)
-    add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                                         keyprefix=keyprefix)
+    #add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    #add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
 
-    del networkx_graph
-    ### Edge-level metrics ###
+    
+
+    ### Calls for Edge-level metrics ###
     if len(net_cx2.get_edges()) > 0:
-        graph_w_keys = get_networkx_graph_with_keys(net_cx2=net_cx2, isdirected=isdirected)
-        add_edge_betweeness_centrality(net_cx2=net_cx2, networkx_graph=graph_w_keys,
+        add_edge_betweenness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
                                        keyprefix=keyprefix)
-        del graph_w_keys
 
     return net_cx2.to_cx2()
-    
-
-##### EDGE-LEVEL FUNCTIONS #####
-    
-
-def add_edge_betweeness_centrality(net_cx2=None, networkx_graph=None, keyprefix=''):
-    """
-    Adds edge betweenness centrality to **net_cx2** network
-    as an edge attribute named ``Betweenness Centrality``
-
-    :param net_cx2: Network to analyze
-    :type net_cx2: :py:class:`ndex2.cx2.CX2Network`
-    :param networkx_graph: Networkx version of network
-    :type networkx_graph: :py:class:`networkx.Graph`
-    :param src_target_map: map of (src,target) => edge id
-                                  (target,src) => edge id
-    :type src_target_map: dict
-    """
-    # Analyze only the largest connected component (LCC)
-    largest_cc = max(nx.connected_components(networkx_graph), key=len)
-    subgraph = networkx_graph.subgraph(largest_cc)
-
-    # Compute edge betweenness on the LCC
-    edge_betweenness = nx.edge_betweenness_centrality(subgraph)
-
-    # Assign values (non-LCC edges will be implicitly excluded)
-    for nx_edge_id, val in edge_betweenness.items():
-        net_cx2.add_edge_attribute(
-            edge_id=nx_edge_id[2],  # Assumes edge_id is stored in the 3rd position of the tuple
-            key=keyprefix + 'Betweenness Centrality',
-            value=val,
-            datatype=ndex2constants.DOUBLE_DATATYPE
-        )
-
-##### END OF EDGE-LEVEL FUNCTIONS #####
 
 
 def get_cx2_net_from_input(input_path):

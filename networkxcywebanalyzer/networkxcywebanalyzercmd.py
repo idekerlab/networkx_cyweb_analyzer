@@ -132,12 +132,11 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
         keyprefix = ''
 
     net_cx2.add_network_attribute(
-        key=keyprefix + 'Is Directed Network',
+        key=keyprefix + 'Directed Network',
         value=str(isdirected),
         datatype=ndex2constants.STRING_DATATYPE
     )
 
-    #networkx_graph = factory.get_graph(net_cx2, networkx_graph=nx.MultiGraph()) # Why do we set MultiGraph here??? This way we automatically make networkx_graph an undirected graph, even if it is directed, right?
     networkx_graph = get_networkx_graph_with_keys(net_cx2=net_cx2, isdirected=isdirected)
     networkx_degree = networkx_graph.degree()
 
@@ -148,8 +147,7 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
     
     add_avg_neighbors_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) # includes calculation of components coverage (node %, etc)
         
-    net_cx2.add_network_attribute(key=keyprefix + 'Average degree',
-                                  value=str(round(sum(dict(networkx_degree).values()) / networkx_graph.number_of_nodes(), 3)))
+    add_avg_degree_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
 
     add_eccentricity_attribute(net_cx2=net_cx2,
                                networkx_graph=networkx_graph,
@@ -189,8 +187,7 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
     
     #add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #exclude endpoints
     
-    #add_degree_node_attribute(net_cx2=net_cx2, networkx_degrees=networkx_graph.degree(), keyprefix=keyprefix)  # Total degree
-    # Or use in_degree()/out_degree() for directional graphs
+    add_degree_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
     
     #add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
     #add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)

@@ -515,3 +515,132 @@ def add_connected_components_net_attrib(net_cx2=None, networkx_graph=None, keypr
                 value=str(components),
                 datatype=ndex2constants.STRING_DATATYPE
             )
+
+def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
+    """
+    Calculates average‐degree metrics for directed/undirected networks.
+
+    Fully connected:
+      • Undirected → “Average Degree”  
+      • Directed   → “Average In-Degree” & “Average Out-Degree”
+
+    Disconnected:
+      • Always → global “Average Degree”  
+      • Undirected → + “Average Degree (LCC)”  
+      • Directed   → + “Average Degree (WCC)”, “Average In-Degree (WCC)”, “Average Out-Degree (WCC)”
+                     + “Average Degree (SCC)”, “Average In-Degree (SCC)”, “Average Out-Degree (SCC)”
+    """
+    import networkx as nx
+    from ndex2.constants import STRING_DATATYPE
+
+    # validation
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+    if not isinstance(networkx_graph, (nx.Graph, nx.MultiGraph, nx.DiGraph, nx.MultiDiGraph)):
+        raise ValueError("Requires NetworkX Graph/MultiGraph or DiGraph/MultiDiGraph")
+
+    is_directed = networkx_graph.is_directed()
+    N = networkx_graph.number_of_nodes()
+    if N == 0:
+        return
+
+    # fully‐connected test
+    if is_directed:
+        fully_conn = nx.is_strongly_connected(networkx_graph)
+    else:
+        fully_conn = nx.is_connected(networkx_graph)
+
+    # --- fully connected ---
+    if fully_conn:
+        if is_directed:
+            avg_in = sum(d for _, d in networkx_graph.in_degree()) / N
+            avg_out = sum(d for _, d in networkx_graph.out_degree()) / N
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average In-Degree",
+                value=str(round(avg_in, 3)),
+                datatype=STRING_DATATYPE
+            )
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Out-Degree",
+                value=str(round(avg_out, 3)),
+                datatype=STRING_DATATYPE
+            )
+        else:
+            avg_deg = sum(d for _, d in networkx_graph.degree()) / N
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Degree",
+                value=str(round(avg_deg, 3)),
+                datatype=STRING_DATATYPE
+            )
+
+    # --- disconnected ---
+    else:
+        # global average degree (total degree)
+        avg_deg = sum(d for _, d in networkx_graph.degree()) / N
+        net_cx2.add_network_attribute(
+            key=f"{keyprefix}Average Degree",
+            value=str(round(avg_deg, 3)),
+            datatype=STRING_DATATYPE
+        )
+
+        if is_directed:
+            # Largest Weakly Connected Component
+            wccs = list(nx.weakly_connected_components(networkx_graph))
+            wcc = max(wccs, key=len)
+            G_wcc = networkx_graph.subgraph(wcc)
+            n_wcc = G_wcc.number_of_nodes()
+            avg_wcc_deg = sum(d for _, d in G_wcc.degree()) / n_wcc
+            avg_wcc_in  = sum(d for _, d in G_wcc.in_degree()) / n_wcc
+            avg_wcc_out = sum(d for _, d in G_wcc.out_degree()) / n_wcc
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Degree (WCC)",
+                value=str(round(avg_wcc_deg, 3)),
+                datatype=STRING_DATATYPE
+            )
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average In-Degree (WCC)",
+                value=str(round(avg_wcc_in, 3)),
+                datatype=STRING_DATATYPE
+            )
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Out-Degree (WCC)",
+                value=str(round(avg_wcc_out, 3)),
+                datatype=STRING_DATATYPE
+            )
+
+            # Largest Strongly Connected Component
+            sccs = list(nx.strongly_connected_components(networkx_graph))
+            scc = max(sccs, key=len)
+            G_scc = networkx_graph.subgraph(scc)
+            n_scc = G_scc.number_of_nodes()
+            avg_scc_deg = sum(d for _, d in G_scc.degree()) / n_scc
+            avg_scc_in  = sum(d for _, d in G_scc.in_degree()) / n_scc
+            avg_scc_out = sum(d for _, d in G_scc.out_degree()) / n_scc
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Degree (SCC)",
+                value=str(round(avg_scc_deg, 3)),
+                datatype=STRING_DATATYPE
+            )
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average In-Degree (SCC)",
+                value=str(round(avg_scc_in, 3)),
+                datatype=STRING_DATATYPE
+            )
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Out-Degree (SCC)",
+                value=str(round(avg_scc_out, 3)),
+                datatype=STRING_DATATYPE
+            )
+
+        else:
+            # Largest Connected Component (undirected)
+            comps = list(nx.connected_components(networkx_graph))
+            lcc = max(comps, key=len)
+            G_lcc = networkx_graph.subgraph(lcc)
+            n_lcc = G_lcc.number_of_nodes()
+            avg_lcc_deg = sum(d for _, d in G_lcc.degree()) / n_lcc
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Average Degree (LCC)",
+                value=str(round(avg_lcc_deg, 3)),
+                datatype=STRING_DATATYPE
+            )

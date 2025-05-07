@@ -13,7 +13,7 @@ def add_edge_betweenness_centrality(net_cx2=None, networkx_graph=None, keyprefix
             edge_id = edge[2]  # Assumes CX2 edge ID is stored in third position of the tuple
             net_cx2.add_edge_attribute(
                 edge_id=edge_id,
-                key=f"{keyprefix}{attribute_name}",
+                key=f"{keyprefix} {attribute_name}",
                 value=val,
                 datatype=ndex2constants.DOUBLE_DATATYPE
             )

@@ -55,7 +55,7 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         networkxcywebanalyzercmd.add_edge_betweenness_centrality(net_cx2=cx2_network,
                                                                 networkx_graph=networkx_graph)
         self.assertAlmostEqual(1.0,
-                               cx2_network.get_edges()[0]['v']['Edge Betweenness'])
+                               cx2_network.get_edges()[0]['v'][' Edge Betweenness'])
 
     def test_add_edge_betweenness_centrality_two_node_net_multidigraph(self):
         cx2_network = CX2Network()
@@ -68,7 +68,7 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         networkxcywebanalyzercmd.add_edge_betweenness_centrality(net_cx2=cx2_network,
                                                                 networkx_graph=networkx_graph)
         self.assertAlmostEqual(0.5,
-                               cx2_network.get_edges()[0]['v']['Edge Betweenness'])
+                               cx2_network.get_edges()[0]['v'][' Edge Betweenness'])
 
 """
     def test_run_infomap_no_file(self):

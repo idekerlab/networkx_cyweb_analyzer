@@ -1,5 +1,5 @@
 ===================================================
-Cytoscape Web NetworkX Analyzer (NXA)
+Cytoscape Web 'NetworkX Analyzer (NXA)'
 ===================================================
 
 TODO

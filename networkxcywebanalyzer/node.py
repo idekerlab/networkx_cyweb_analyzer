@@ -26,12 +26,12 @@ def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
             )
         
         net_cx2.add_network_attribute(
-            key=f"{keyprefix} Network diameter {suffix}",
+            key=f"Network diameter {suffix}",
             value=str(max(eccentricities.values())),
             datatype=ndex2constants.STRING_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"{keyprefix} Network radius {suffix}",
+            key=f"Network radius {suffix}",
             value=str(min(eccentricities.values())),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -45,12 +45,12 @@ def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
             datatype=ndex2constants.INTEGER_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"{keyprefix} Network diameter {suffix}",
+            key=f"Network diameter {suffix}",
             value='0',
             datatype=ndex2constants.STRING_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"{keyprefix} Network radius {suffix}",
+            key=f"Network radius {suffix}",
             value='0',
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -102,6 +102,7 @@ def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
             _add_metrics(nx.eccentricity(subgraph), suffix)
 
 def add_degree_node_attribute(net_cx2, networkx_graph, keyprefix=''):
+
     """
     Adds node‐degree attributes to a CX2 network.
 
@@ -141,3 +142,4 @@ def add_degree_node_attribute(net_cx2, networkx_graph, keyprefix=''):
                 value=int(deg),
                 datatype=ndex2constants.INTEGER_DATATYPE
             )
+

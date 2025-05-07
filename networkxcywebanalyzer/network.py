@@ -9,7 +9,7 @@ def add_number_of_nodes(net_cx2=None, keyprefix=''):
 
     # Add to CX2 network
     net_cx2.add_network_attribute(
-        key=keyprefix + 'Number of Nodes',
+        key='Number of Nodes',
         value=str(number_of_nodes),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -20,7 +20,7 @@ def add_number_of_edges(net_cx2=None, keyprefix=''):
 
     # Add to CX2 network
     net_cx2.add_network_attribute(
-        key=keyprefix + 'Number of Edges',
+        key='Number of Edges',
         value=str(number_of_edges),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -41,7 +41,7 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             # Only report SCC metrics (WCC = SCC in fully connected graphs)
             scc_avg = sum(len(set(networkx_graph.successors(n))) for n in nodes) / len(nodes)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. unique neighbors (SCC)",
+                key="Avg. unique neighbors (SCC)",
                 value=str(round(scc_avg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -49,13 +49,13 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             # For disconnected directed graphs, report both WCC and SCC
             wcc_avg = sum(len(set(networkx_graph.neighbors(n))) for n in nodes) / len(nodes)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. unique neighbors (WCC)",
+                key="Avg. unique neighbors (WCC)",
                 value=str(round(wcc_avg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             scc_avg = sum(len(set(networkx_graph.successors(n))) for n in nodes) / len(nodes)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. unique neighbors (SCC)",
+                key="Avg. unique neighbors (SCC)",
                 value=str(round(scc_avg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -63,7 +63,7 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
         # Undirected graphs: simple average
         global_avg = sum(len(set(networkx_graph.neighbors(n))) for n in nodes) / len(nodes)
         net_cx2.add_network_attribute(
-            key=f"{keyprefix}Avg. unique neighbors",
+            key="Avg. unique neighbors",
             value=str(round(global_avg, 3)),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -77,12 +77,12 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             largest_wcc = max(wccs, key=len)
             coverage = len(largest_wcc)/len(nodes)*100
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}WCC nodes",
+                key="WCC nodes",
                 value=str(len(largest_wcc)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}WCC node coverage (%)",
+                key="WCC node coverage (%)",
                 value=str(round(coverage, 1)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -91,12 +91,12 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             largest_scc = max(sccs, key=len)
             coverage = len(largest_scc)/len(nodes)*100
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}SCC nodes",
+                key="SCC nodes",
                 value=str(len(largest_scc)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}SCC node coverage (%)",
+                key="SCC node coverage (%)",
                 value=str(round(coverage, 1)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -107,17 +107,17 @@ def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             lcc_avg = sum(len(set(networkx_graph.neighbors(n))) for n in lcc) / len(lcc)
             coverage = len(lcc)/len(nodes)*100
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. unique neighbors (LCC)",
+                key="Avg. unique neighbors (LCC)",
                 value=str(round(lcc_avg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}LCC nodes",
+                key="LCC nodes",
                 value=str(len(lcc)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}LCC node coverage (%)",
+                key="LCC node coverage (%)",
                 value=str(round(coverage, 1)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -173,7 +173,7 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None,
     
     key_suffix = 'Characteristic path length' if is_connected else 'Characteristic path length (LCC)'
     net_cx2.add_network_attribute(
-        key=f"{keyprefix}{key_suffix}",
+        key=f"{key_suffix}",
         value=str(cpl) if isinstance(cpl, str) else str(round(cpl, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -190,7 +190,7 @@ def add_characteristic_path_length_net_attrib_directed(net_cx2=None, networkx_gr
     wcc_cpl, is_wcc_connected = _calculate_path_length(networkx_graph, 'WCC')
     wcc_key = 'Characteristic path length' if is_wcc_connected else 'Characteristic path length (WCC)'
     net_cx2.add_network_attribute(
-        key=f"{keyprefix}{wcc_key}",
+        key=f"{wcc_key}",
         value=str(wcc_cpl) if isinstance(wcc_cpl, str) else str(round(wcc_cpl, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -199,7 +199,7 @@ def add_characteristic_path_length_net_attrib_directed(net_cx2=None, networkx_gr
     scc_cpl, is_scc_connected = _calculate_path_length(networkx_graph, 'SCC')
     scc_key = 'Characteristic path length' if is_scc_connected else 'Characteristic path length (SCC)'
     net_cx2.add_network_attribute(
-        key=f"{keyprefix}{scc_key}",
+        key=f"{scc_key}",
         value=str(scc_cpl) if isinstance(scc_cpl, str) else str(round(scc_cpl, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -241,12 +241,12 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
 
         # Add network-level attributes
         net_cx2.add_network_attribute(
-            key=f"{keyprefix} Avg. clustering Coefficient{suffix}",
+            key=f"Avg. clustering Coefficient{suffix}",
             value=str(round(avg_clustering_coeff, 3)),
             datatype=ndex2constants.STRING_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"{keyprefix} Transitivity{suffix}",
+            key=f"Transitivity{suffix}",
             value=str(round(transitivity, 3)),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -322,7 +322,7 @@ def add_density_net_attrib(net_cx2=None, networkx_graph=None,
     if connected:
         d = round(compute_density(networkx_graph), 3)
         net_cx2.add_network_attribute(
-            key=f"{keyprefix}{density_key}",
+            key=f"{density_key}",
             value=str(d),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -331,7 +331,7 @@ def add_density_net_attrib(net_cx2=None, networkx_graph=None,
             lcc = max(nx.connected_components(networkx_graph), key=len)
             d = round(compute_density(networkx_graph.subgraph(lcc)), 3)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}{density_key} (LCC)",
+                key=f"{density_key} (LCC)",
                 value=str(d),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -341,12 +341,12 @@ def add_density_net_attrib(net_cx2=None, networkx_graph=None,
             d_w = round(compute_density(networkx_graph.subgraph(wcc)), 3)
             d_s = round(compute_density(networkx_graph.subgraph(scc)), 3)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}{density_key} (WCC)",
+                key=f"{density_key} (WCC)",
                 value=str(d_w),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}{density_key} (SCC)",
+                key=f"{density_key} (SCC)",
                 value=str(d_s),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -379,7 +379,7 @@ def add_centralization_net_attrib(net_cx2=None, networkx_graph=None, keyprefix='
     if connected:
         c = round(compute_centralization(networkx_graph), 3)
         net_cx2.add_network_attribute(
-            key=f"{keyprefix}Network Centralization",
+            key="Network Centralization",
             value=str(c),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -388,7 +388,7 @@ def add_centralization_net_attrib(net_cx2=None, networkx_graph=None, keyprefix='
             lcc = max(nx.connected_components(networkx_graph), key=len)
             c = round(compute_centralization(networkx_graph.subgraph(lcc)), 3)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Network Centralization (LCC)",
+                key="Network Centralization (LCC)",
                 value=str(c),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -398,12 +398,12 @@ def add_centralization_net_attrib(net_cx2=None, networkx_graph=None, keyprefix='
             c_w = round(compute_centralization(networkx_graph.subgraph(wcc)), 3)
             c_s = round(compute_centralization(networkx_graph.subgraph(scc)), 3)
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Network Centralization (WCC)",
+                key="Network Centralization (WCC)",
                 value=str(c_w),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Network Centralization (SCC)",
+                key="Network Centralization (SCC)",
                 value=str(c_s),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -425,7 +425,7 @@ def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
     # --- Early return for empty graph ---
     if len(networkx_graph.nodes()) == 0:
         net_cx2.add_network_attribute(
-            key=f"{keyprefix}Network Heterogeneity",
+            key="Network Heterogeneity",
             value="0.0",
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -452,7 +452,7 @@ def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
     # --- Global heterogeneity ---
     global_hetero = compute_heterogeneity(networkx_graph)
     net_cx2.add_network_attribute(
-        key=f"{keyprefix}Network Heterogeneity",
+        key="Network Heterogeneity",
         value=str(round(global_hetero, 3)),
         datatype=ndex2constants.STRING_DATATYPE
     )
@@ -463,7 +463,7 @@ def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             lcc = max(nx.connected_components(networkx_graph), key=len)
             lcc_hetero = compute_heterogeneity(networkx_graph.subgraph(lcc))
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Network Heterogeneity (LCC)",
+                key="Network Heterogeneity (LCC)",
                 value=str(round(lcc_hetero, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -475,12 +475,12 @@ def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
             scc_hetero = compute_heterogeneity(networkx_graph.subgraph(scc))
             
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Network Heterogeneity (WCC)",
+                key="Network Heterogeneity (WCC)",
                 value=str(round(wcc_hetero, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Network Heterogeneity (SCC)",
+                key="Network Heterogeneity (SCC)",
                 value=str(round(scc_hetero, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -495,14 +495,14 @@ def add_connected_components_net_attrib(net_cx2=None, networkx_graph=None, keypr
         
         if wccs > 1:
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Connected components (WCCs)",
+                key="Connected components (WCCs)",
                 value=str(wccs),
                 datatype=ndex2constants.STRING_DATATYPE
             )
         
         if sccs > 1:
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Connected components (SCCs)",
+                key="Connected components (SCCs)",
                 value=str(sccs),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -511,7 +511,7 @@ def add_connected_components_net_attrib(net_cx2=None, networkx_graph=None, keypr
         components = nx.number_connected_components(networkx_graph)
         if components > 1:
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Connected components",
+                key="Connected components",
                 value=str(components),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -556,19 +556,19 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             avg_in = sum(d for _, d in networkx_graph.in_degree()) / N
             avg_out = sum(d for _, d in networkx_graph.out_degree()) / N
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average In-Degree",
+                key="Average In-Degree",
                 value=str(round(avg_in, 3)),
                 datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Out-Degree",
+                key="Average Out-Degree",
                 value=str(round(avg_out, 3)),
                 datatype=STRING_DATATYPE
             )
         else:
             avg_deg = sum(d for _, d in networkx_graph.degree()) / N
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Degree",
+                key="Average Degree",
                 value=str(round(avg_deg, 3)),
                 datatype=STRING_DATATYPE
             )
@@ -578,7 +578,7 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
         # global average degree (total degree)
         avg_deg = sum(d for _, d in networkx_graph.degree()) / N
         net_cx2.add_network_attribute(
-            key=f"{keyprefix}Average Degree",
+            key="Average Degree",
             value=str(round(avg_deg, 3)),
             datatype=STRING_DATATYPE
         )
@@ -593,17 +593,17 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             avg_wcc_in  = sum(d for _, d in G_wcc.in_degree()) / n_wcc
             avg_wcc_out = sum(d for _, d in G_wcc.out_degree()) / n_wcc
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Degree (WCC)",
+                key="Average Degree (WCC)",
                 value=str(round(avg_wcc_deg, 3)),
                 datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average In-Degree (WCC)",
+                key="Average In-Degree (WCC)",
                 value=str(round(avg_wcc_in, 3)),
                 datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Out-Degree (WCC)",
+                key="Average Out-Degree (WCC)",
                 value=str(round(avg_wcc_out, 3)),
                 datatype=STRING_DATATYPE
             )
@@ -617,17 +617,17 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             avg_scc_in  = sum(d for _, d in G_scc.in_degree()) / n_scc
             avg_scc_out = sum(d for _, d in G_scc.out_degree()) / n_scc
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Degree (SCC)",
+                key="Average Degree (SCC)",
                 value=str(round(avg_scc_deg, 3)),
                 datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average In-Degree (SCC)",
+                key="Average In-Degree (SCC)",
                 value=str(round(avg_scc_in, 3)),
                 datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Out-Degree (SCC)",
+                key="Average Out-Degree (SCC)",
                 value=str(round(avg_scc_out, 3)),
                 datatype=STRING_DATATYPE
             )
@@ -640,7 +640,7 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             n_lcc = G_lcc.number_of_nodes()
             avg_lcc_deg = sum(d for _, d in G_lcc.degree()) / n_lcc
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Average Degree (LCC)",
+                key="Average Degree (LCC)",
                 value=str(round(avg_lcc_deg, 3)),
                 datatype=STRING_DATATYPE
             )

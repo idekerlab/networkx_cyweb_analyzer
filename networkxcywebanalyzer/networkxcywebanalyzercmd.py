@@ -153,7 +153,7 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
 
     add_eccentricity_attribute(net_cx2=net_cx2,
                                networkx_graph=networkx_graph,
-                               keyprefix=keyprefix) # includes diameter and radius metrics
+                               keyprefix=keyprefix) # Function located in node.py
     
     if networkx_graph.is_directed():
         add_characteristic_path_length_net_attrib_directed(net_cx2=net_cx2,

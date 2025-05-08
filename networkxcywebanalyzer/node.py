@@ -3,7 +3,7 @@ from ndex2 import constants as ndex2constants
 from itertools import combinations
 from collections import defaultdict
 
-
+# includes network diameter and radius metrics. 
 def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
     """
     Computes and adds node eccentricity attributes, Radius, and Diameter.

@@ -190,6 +190,7 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
     #add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #exclude endpoints
     
     add_degree_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_comprehensive_topological_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
     
     #add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
     #add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)

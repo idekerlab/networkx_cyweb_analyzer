@@ -26,12 +26,12 @@ def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
             )
         
         net_cx2.add_network_attribute(
-            key=f"Network diameter {suffix}",
+            key=f"Network Diameter {suffix}",
             value=str(max(eccentricities.values())),
             datatype=ndex2constants.STRING_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"Network radius {suffix}",
+            key=f"Network Radius {suffix}",
             value=str(min(eccentricities.values())),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -45,12 +45,12 @@ def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
             datatype=ndex2constants.INTEGER_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"Network diameter {suffix}",
+            key=f"Network Diameter {suffix}",
             value='0',
             datatype=ndex2constants.STRING_DATATYPE
         )
         net_cx2.add_network_attribute(
-            key=f"Network radius {suffix}",
+            key=f"Network Radius {suffix}",
             value='0',
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -101,10 +101,10 @@ def add_eccentricity_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
         else:
             _add_metrics(nx.eccentricity(subgraph), suffix)
 
-def add_degree_node_attribute(net_cx2, networkx_graph, keyprefix=''):
+def add_degree_node_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
 
     """
-    Adds node‐degree attributes to a CX2 network.
+    Adds node degree attributes to a CX2 network.
 
     - If `networkx_graph` is undirected, adds a single "<prefix>Degree".
     - If directed, adds both "<prefix>InDegree" and "<prefix>OutDegree".
@@ -143,3 +143,121 @@ def add_degree_node_attribute(net_cx2, networkx_graph, keyprefix=''):
                 datatype=ndex2constants.INTEGER_DATATYPE
             )
 
+def add_comprehensive_topological_metrics(net_cx2=None, networkx_graph=None, keyprefix=''):
+    """
+    Compute and add a suite of topological coefficient metrics to a CX2 network,
+    covering:
+      • Undirected graphs (global + LCC-only if disconnected)
+      • Directed graphs 
+        - If strongly connected: Successors, Predecessors, Mutual (on full graph)
+        - If disconnected: Global (undirected) + Successors, Predecessors, Mutual (on largest SCC)
+    """
+    if net_cx2 is None or networkx_graph is None:
+        raise ValueError("Both net_cx2 and networkx_graph must be provided")
+
+    def _topological_coefficient(neighbors_dict):
+        """Compute Cytoscape style topological coefficient for each node."""
+        tc = {}
+        for node, neighbors in neighbors_dict.items():
+            if len(neighbors) < 2:
+                tc[node] = 0.0
+                continue
+            total = 0
+            for u, v in combinations(neighbors, 2):
+                shared = neighbors_dict.get(u, set()) & neighbors_dict.get(v, set())
+                total += len(shared)
+            denom = len(neighbors) * (len(neighbors) - 1) / 2
+            tc[node] = total / denom if denom > 0 else 0.0
+        return tc
+
+    def _add_attributes(metric_dict, key):
+        """Add each metric in metric_dict as a node attribute named key (for all nodes)."""
+        for node_id in net_cx2.get_nodes():
+            nid = int(node_id)
+            net_cx2.add_node_attribute(
+                node_id=nid,
+                key=f"{keyprefix} {key}",
+                value=float(metric_dict.get(nid, 0.0)),
+                datatype=ndex2constants.DOUBLE_DATATYPE
+            )
+
+    G = networkx_graph
+
+    # ── UNDIRECTED GRAPH ─────────────────────────────────────────────
+    if not G.is_directed():
+        # 1) Global Topological Coefficient
+        nbrs_all = {n: set(G.neighbors(n)) - {n} for n in G.nodes()}
+        _add_attributes(_topological_coefficient(nbrs_all),
+                        'Topological Coeff.')
+
+        # 2) LCC‐only if disconnected: only for LCC nodes
+        if not nx.is_connected(G):
+            lcc_nodes = max(nx.connected_components(G), key=len)
+            subG = G.subgraph(lcc_nodes)
+            nbrs_lcc = {n: set(subG.neighbors(n)) - {n} for n in subG.nodes()}
+            tc_lcc = _topological_coefficient(nbrs_lcc)
+            for node, value in tc_lcc.items():
+                net_cx2.add_node_attribute(
+                    node_id=int(node),
+                    key='Topological Coeff. (LCC)',
+                    value=float(value),
+                    datatype=ndex2constants.DOUBLE_DATATYPE
+                )
+
+    # ── DIRECTED GRAPH ───────────────────────────────────────────────
+    else:
+        # Determine SCC and whether to include global TC
+        if nx.is_strongly_connected(G):
+            scc_nodes = set(G.nodes())
+            include_global = False
+        else:
+            scc_nodes = max(nx.strongly_connected_components(G), key=len)
+            include_global = True
+
+        # 1) Global (undirected) TC if disconnected
+        if include_global:
+            und_G = G.to_undirected()
+            nbrs_undir = {n: set(und_G.neighbors(n)) - {n} for n in G.nodes()}
+            _add_attributes(_topological_coefficient(nbrs_undir),
+                            'Topological Coeff.')
+
+        # 2) Directed-specific metrics on SCC only
+        subG_scc = G.subgraph(scc_nodes)
+        suffix = ', SCC' if include_global else ''
+
+        # 2a) Successors‐based TC
+        nbrs_succ = {n: set(subG_scc.successors(n)) - {n} for n in subG_scc.nodes()}
+        tc_succ = _topological_coefficient(nbrs_succ)
+        for node, value in tc_succ.items():
+            net_cx2.add_node_attribute(
+                node_id=int(node),
+                key=f'Topological Coeff. (Successors{suffix})',
+                value=float(value),
+                datatype=ndex2constants.DOUBLE_DATATYPE
+            )
+
+        # 2b) Predecessors‐based TC
+        nbrs_pred = {n: set(subG_scc.predecessors(n)) - {n} for n in subG_scc.nodes()}
+        tc_pred = _topological_coefficient(nbrs_pred)
+        for node, value in tc_pred.items():
+            net_cx2.add_node_attribute(
+                node_id=int(node),
+                key=f'Topological Coeff. (Predecessors{suffix})',
+                value=float(value),
+                datatype=ndex2constants.DOUBLE_DATATYPE
+            )
+
+        # 2c) Mutual‐neighbors TC
+        nbrs_mutual = {
+            n: (set(subG_scc.successors(n)) & set(subG_scc.predecessors(n))) - {n}
+            for n in subG_scc.nodes()
+        }
+        tc_mutual = _topological_coefficient(nbrs_mutual)
+        for node, value in tc_mutual.items():
+            net_cx2.add_node_attribute(
+                node_id=int(node),
+                key=f'Topological Coeff. (Mutual{suffix})',
+                value=float(value),
+                datatype=ndex2constants.DOUBLE_DATATYPE
+            )
+        

@@ -28,98 +28,127 @@ def add_number_of_edges(net_cx2=None, keyprefix=''):
 def add_avg_neighbors_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
     """Calculates neighbor metrics and component coverage for directed/undirected networks.
     Avoids redundant WCC/SCC outputs for fully connected directed graphs."""
-    
+    import networkx as nx
+    from ndex2.constants import STRING_DATATYPE
+
+    # Validate input graph
     if not isinstance(networkx_graph, (nx.Graph, nx.MultiGraph, nx.DiGraph, nx.MultiDiGraph)):
         raise ValueError("Requires NetworkX Graph/MultiGraph or DiGraph/MultiDiGraph")
-    
+
     is_directed = isinstance(networkx_graph, (nx.DiGraph, nx.MultiDiGraph))
     nodes = list(networkx_graph.nodes())
-    
-    # Handle neighbor calculations
+    if not nodes:
+        return
+
     if is_directed:
-        if nx.is_strongly_connected(networkx_graph):
-            # Only report SCC metrics (WCC = SCC in fully connected graphs)
-            scc_avg = sum(len(set(networkx_graph.successors(n))) for n in nodes) / len(nodes)
-            net_cx2.add_network_attribute(
-                key="Avg. unique neighbors (SCC)",
-                value=str(round(scc_avg, 3)),
-                datatype=ndex2constants.STRING_DATATYPE
-            )
-        else:
-            # For disconnected directed graphs, report both WCC and SCC
-            wcc_avg = sum(len(set(networkx_graph.neighbors(n))) for n in nodes) / len(nodes)
-            net_cx2.add_network_attribute(
-                key="Avg. unique neighbors (WCC)",
-                value=str(round(wcc_avg, 3)),
-                datatype=ndex2constants.STRING_DATATYPE
-            )
-            scc_avg = sum(len(set(networkx_graph.successors(n))) for n in nodes) / len(nodes)
-            net_cx2.add_network_attribute(
-                key="Avg. unique neighbors (SCC)",
-                value=str(round(scc_avg, 3)),
-                datatype=ndex2constants.STRING_DATATYPE
-            )
-    else:
-        # Undirected graphs: simple average
-        global_avg = sum(len(set(networkx_graph.neighbors(n))) for n in nodes) / len(nodes)
-        net_cx2.add_network_attribute(
-            key="Avg. unique neighbors",
-            value=str(round(global_avg, 3)),
-            datatype=ndex2constants.STRING_DATATYPE
-        )
-    
-    # Handle component metrics (unchanged)
-    if is_directed:
+        # Undirected view for weak connectivity
+        undirected = networkx_graph.to_undirected()
+        # Identify WCCs and SCCs
         wccs = list(nx.weakly_connected_components(networkx_graph))
         sccs = list(nx.strongly_connected_components(networkx_graph))
-        
-        if len(wccs) > 1:
+        node2scc = {n: comp for comp in sccs for n in comp}
+
+        if nx.is_strongly_connected(networkx_graph):
+            # Fully strongly connected: report only SCC
+            scc_avg = sum(
+                len(set(networkx_graph.successors(n)) & node2scc[n])
+                for n in nodes
+            ) / len(nodes)
+            net_cx2.add_network_attribute(
+                key="Avg. Unique Neighbors (SCC)",
+                value=str(round(scc_avg, 3)),
+                datatype=STRING_DATATYPE
+            )
+        else:
+            # Disconnected: compute on largest WCC
             largest_wcc = max(wccs, key=len)
-            coverage = len(largest_wcc)/len(nodes)*100
+            wcc_avg = sum(
+                len(set(undirected.neighbors(n)))
+                for n in largest_wcc
+            ) / len(largest_wcc)
+            # Choose key based on number of WCCs
+            key_name = (
+                "Avg. Unique Neighbors"
+                if len(wccs) == 1
+                else "Avg. Unique Neighbors (WCC)"
+            )
             net_cx2.add_network_attribute(
-                key="WCC nodes",
+                key=key_name,
+                value=str(round(wcc_avg, 3)),
+                datatype=STRING_DATATYPE
+            )
+            # SCC average
+            scc_avg = sum(
+                len(set(networkx_graph.successors(n)) & node2scc[n])
+                for n in nodes
+            ) / len(nodes)
+            net_cx2.add_network_attribute(
+                key="Avg. Unique Neighbors (SCC)",
+                value=str(round(scc_avg, 3)),
+                datatype=STRING_DATATYPE
+            )
+
+        # Component sizes/coverage
+        if len(wccs) > 1:
+            coverage = len(largest_wcc) / len(nodes) * 100
+            net_cx2.add_network_attribute(
+                key="WCC Nodes",
                 value=str(len(largest_wcc)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="WCC node coverage (%)",
+                key="WCC Node Coverage (%)",
                 value=str(round(coverage, 1)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
-        
         if len(sccs) > 1:
             largest_scc = max(sccs, key=len)
-            coverage = len(largest_scc)/len(nodes)*100
+            coverage = len(largest_scc) / len(nodes) * 100
             net_cx2.add_network_attribute(
-                key="SCC nodes",
+                key="SCC Nodes",
                 value=str(len(largest_scc)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="SCC node coverage (%)",
+                key="SCC Node Coverage (%)",
                 value=str(round(coverage, 1)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
     else:
+        # Undirected graph: global average
+        global_avg = sum(
+            len(set(networkx_graph.neighbors(n)))
+            for n in nodes
+        ) / len(nodes)
+        net_cx2.add_network_attribute(
+            key="Avg. Unique Neighbors",
+            value=str(round(global_avg, 3)),
+            datatype=STRING_DATATYPE
+        )
+
+        # LCC metrics if disconnected
         components = list(nx.connected_components(networkx_graph))
         if len(components) > 1:
             lcc = max(components, key=len)
-            lcc_avg = sum(len(set(networkx_graph.neighbors(n))) for n in lcc) / len(lcc)
-            coverage = len(lcc)/len(nodes)*100
+            lcc_avg = sum(
+                len(set(networkx_graph.neighbors(n)))
+                for n in lcc
+            ) / len(lcc)
+            coverage = len(lcc) / len(nodes) * 100
             net_cx2.add_network_attribute(
-                key="Avg. unique neighbors (LCC)",
+                key="Avg. Unique Neighbors (LCC)",
                 value=str(round(lcc_avg, 3)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="LCC nodes",
+                key="LCC Nodes",
                 value=str(len(lcc)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="LCC node coverage (%)",
+                key="LCC Node Coverage (%)",
                 value=str(round(coverage, 1)),
-                datatype=ndex2constants.STRING_DATATYPE
+                datatype=STRING_DATATYPE
             )
 
 def _calculate_path_length(graph, component_type=None):
@@ -171,7 +200,7 @@ def add_characteristic_path_length_net_attrib(net_cx2=None, networkx_graph=None,
     
     cpl, is_connected = _calculate_path_length(networkx_graph)
     
-    key_suffix = 'Characteristic path length' if is_connected else 'Characteristic path length (LCC)'
+    key_suffix = 'Characteristic Path Length' if is_connected else 'Characteristic Path Length (LCC)'
     net_cx2.add_network_attribute(
         key=f"{key_suffix}",
         value=str(cpl) if isinstance(cpl, str) else str(round(cpl, 3)),
@@ -188,7 +217,7 @@ def add_characteristic_path_length_net_attrib_directed(net_cx2=None, networkx_gr
     
     # WCC Calculation
     wcc_cpl, is_wcc_connected = _calculate_path_length(networkx_graph, 'WCC')
-    wcc_key = 'Characteristic path length' if is_wcc_connected else 'Characteristic path length (WCC)'
+    wcc_key = 'Characteristic Path Length' if is_wcc_connected else 'Characteristic Path Length (WCC)'
     net_cx2.add_network_attribute(
         key=f"{wcc_key}",
         value=str(wcc_cpl) if isinstance(wcc_cpl, str) else str(round(wcc_cpl, 3)),
@@ -197,7 +226,7 @@ def add_characteristic_path_length_net_attrib_directed(net_cx2=None, networkx_gr
     
     # SCC Calculation
     scc_cpl, is_scc_connected = _calculate_path_length(networkx_graph, 'SCC')
-    scc_key = 'Characteristic path length' if is_scc_connected else 'Characteristic path length (SCC)'
+    scc_key = 'Characteristic Path Length' if is_scc_connected else 'Characteristic Path Length (SCC)'
     net_cx2.add_network_attribute(
         key=f"{scc_key}",
         value=str(scc_cpl) if isinstance(scc_cpl, str) else str(round(scc_cpl, 3)),
@@ -241,7 +270,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
 
         # Add network-level attributes
         net_cx2.add_network_attribute(
-            key=f"Avg. clustering Coefficient{suffix}",
+            key=f"Avg. Clustering Coeff.{suffix}",
             value=str(round(avg_clustering_coeff, 3)),
             datatype=ndex2constants.STRING_DATATYPE
         )
@@ -255,7 +284,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
         for node_id, val in clustering_coeff.items():
             net_cx2.add_node_attribute(
                 node_id=int(node_id),
-                key=f"{keyprefix} Clustering Coefficient{suffix}",
+                key=f"{keyprefix} Clustering Coeff.{suffix}",
                 value=val,
                 datatype=ndex2constants.DOUBLE_DATATYPE
             )
@@ -263,7 +292,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
         for node_id, val in eigenvector.items():
             net_cx2.add_node_attribute(
                 node_id=int(node_id),
-                key=f"{keyprefix} Eigenvector Centrality{suffix}",
+                key=f"{keyprefix} Eigenvector{suffix}",
                 value=val,
                 datatype=ndex2constants.DOUBLE_DATATYPE
             )
@@ -272,10 +301,14 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
     if is_directed:
         # Directed: Compute for both SCC and WCC if disconnected
         if not nx.is_strongly_connected(G_simple):
-            largest_wcc = max(nx.weakly_connected_components(G_simple), key=len)
+            wccs = list(nx.weakly_connected_components(G_simple))
+            largest_wcc = max(wccs, key=len)
             G_wcc = G_simple.subgraph(largest_wcc).copy()
             G_w_wcc = G_w.subgraph(largest_wcc).copy()
-            compute_and_add_metrics(net_cx2, G_wcc, G_w_wcc, keyprefix, suffix=' (WCC)')
+            if len(wccs) > 1:
+                compute_and_add_metrics(net_cx2, G_wcc, G_w_wcc, keyprefix, suffix=' (WCC)')
+            else:
+                compute_and_add_metrics(net_cx2, G_wcc, G_w_wcc, keyprefix, suffix='')
             
             largest_scc = max(nx.strongly_connected_components(G_simple), key=len)
             G_scc = G_simple.subgraph(largest_scc).copy()
@@ -298,7 +331,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
 def add_density_net_attrib(net_cx2=None, networkx_graph=None,
                            keyprefix="", density_key="Network Density"):
     """
-    Calculates network density, automatically accounting for multi‐edges if present.
+    Calculates network density, automatically accounting for multi edges if present.
     - For disconnected networks, only computes density for the largest component
       (LCC for undirected; WCC & SCC for directed).
     - Rounds to 3 decimal places and stores as STRING_DATATYPE.
@@ -336,15 +369,23 @@ def add_density_net_attrib(net_cx2=None, networkx_graph=None,
                 datatype=ndex2constants.STRING_DATATYPE
             )
         else:
-            wcc = max(nx.weakly_connected_components(networkx_graph), key=len)
+            wccs = list(nx.weakly_connected_components(networkx_graph))
+            wcc = max(wccs, key=len)
             scc = max(nx.strongly_connected_components(networkx_graph), key=len)
             d_w = round(compute_density(networkx_graph.subgraph(wcc)), 3)
             d_s = round(compute_density(networkx_graph.subgraph(scc)), 3)
-            net_cx2.add_network_attribute(
-                key=f"{density_key} (WCC)",
-                value=str(d_w),
-                datatype=ndex2constants.STRING_DATATYPE
-            )
+            
+            if len(wccs) > 1:
+                net_cx2.add_network_attribute(
+                    key=f"{density_key} (WCC)",
+                    value=str(d_w),
+                    datatype=ndex2constants.STRING_DATATYPE)
+            else:
+                net_cx2.add_network_attribute(
+                    key=f"{density_key}",
+                    value=str(d_w),
+                    datatype=ndex2constants.STRING_DATATYPE)
+                
             net_cx2.add_network_attribute(
                 key=f"{density_key} (SCC)",
                 value=str(d_s),
@@ -393,15 +434,23 @@ def add_centralization_net_attrib(net_cx2=None, networkx_graph=None, keyprefix='
                 datatype=ndex2constants.STRING_DATATYPE
             )
         else:
-            wcc = max(nx.weakly_connected_components(networkx_graph), key=len)
+            wccs = list(nx.weakly_connected_components(networkx_graph))
+            wcc = max(wccs, key=len)
             scc = max(nx.strongly_connected_components(networkx_graph), key=len)
             c_w = round(compute_centralization(networkx_graph.subgraph(wcc)), 3)
             c_s = round(compute_centralization(networkx_graph.subgraph(scc)), 3)
-            net_cx2.add_network_attribute(
-                key="Network Centralization (WCC)",
-                value=str(c_w),
-                datatype=ndex2constants.STRING_DATATYPE
-            )
+            
+            if len(wccs) > 1:   
+                net_cx2.add_network_attribute(
+                    key="Network Centralization (WCC)",
+                    value=str(c_w),
+                    datatype=ndex2constants.STRING_DATATYPE)
+            else:
+                net_cx2.add_network_attribute(
+                    key="Network Centralization",
+                    value=str(c_w),
+                    datatype=ndex2constants.STRING_DATATYPE)
+                
             net_cx2.add_network_attribute(
                 key="Network Centralization (SCC)",
                 value=str(c_s),
@@ -468,17 +517,18 @@ def add_heterogeneity_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''
                 datatype=ndex2constants.STRING_DATATYPE
             )
         else:
-            wcc = max(nx.weakly_connected_components(networkx_graph), key=len)
+            wccs = list(nx.weakly_connected_components(networkx_graph))
+            wcc = max(wccs, key=len)
             scc = max(nx.strongly_connected_components(networkx_graph), key=len)
             
-            wcc_hetero = compute_heterogeneity(networkx_graph.subgraph(wcc))
-            scc_hetero = compute_heterogeneity(networkx_graph.subgraph(scc))
-            
-            net_cx2.add_network_attribute(
+            if len(wccs) > 1:
+                wcc_hetero = compute_heterogeneity(networkx_graph.subgraph(wcc))
+                net_cx2.add_network_attribute(
                 key="Network Heterogeneity (WCC)",
                 value=str(round(wcc_hetero, 3)),
-                datatype=ndex2constants.STRING_DATATYPE
-            )
+                datatype=ndex2constants.STRING_DATATYPE)
+
+            scc_hetero = compute_heterogeneity(networkx_graph.subgraph(scc))
             net_cx2.add_network_attribute(
                 key="Network Heterogeneity (SCC)",
                 value=str(round(scc_hetero, 3)),
@@ -495,14 +545,14 @@ def add_connected_components_net_attrib(net_cx2=None, networkx_graph=None, keypr
         
         if wccs > 1:
             net_cx2.add_network_attribute(
-                key="Connected components (WCCs)",
+                key="Connected Components (WCCs)",
                 value=str(wccs),
                 datatype=ndex2constants.STRING_DATATYPE
             )
         
         if sccs > 1:
             net_cx2.add_network_attribute(
-                key="Connected components (SCCs)",
+                key="Connected Components (SCCs)",
                 value=str(sccs),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -511,28 +561,23 @@ def add_connected_components_net_attrib(net_cx2=None, networkx_graph=None, keypr
         components = nx.number_connected_components(networkx_graph)
         if components > 1:
             net_cx2.add_network_attribute(
-                key="Connected components",
+                key="Connected Components",
                 value=str(components),
                 datatype=ndex2constants.STRING_DATATYPE
             )
 
 def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
     """
-    Calculates average‐degree metrics for directed/undirected networks.
+    Calculates average degree metrics for directed/undirected networks.
 
     Fully connected:
-      • Undirected → “Average Degree”  
-      • Directed   → “Average In-Degree” & “Average Out-Degree”
+      • Undirected → "Avg. Degree"
+      • Directed   → "Avg. In-Degree" & "Avg. Out-Degree"
 
     Disconnected:
-      • Always → global “Average Degree”  
-      • Undirected → + “Average Degree (LCC)”  
-      • Directed   → + “Average Degree (WCC)”, “Average In-Degree (WCC)”, “Average Out-Degree (WCC)”
-                     + “Average Degree (SCC)”, “Average In-Degree (SCC)”, “Average Out-Degree (SCC)”
+      • Undirected → global "Avg. Degree" & "Avg. Degree (LCC)"
+      • Directed   → "Avg. In-Degree (WCC/SCC)", "Avg. Out-Degree (WCC/SCC)"
     """
-    import networkx as nx
-    from ndex2.constants import STRING_DATATYPE
-
     # validation
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both net_cx2 and networkx_graph must be provided")
@@ -544,7 +589,7 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
     if N == 0:
         return
 
-    # fully‐connected test
+    # fully-connected test
     if is_directed:
         fully_conn = nx.is_strongly_connected(networkx_graph)
     else:
@@ -556,91 +601,78 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             avg_in = sum(d for _, d in networkx_graph.in_degree()) / N
             avg_out = sum(d for _, d in networkx_graph.out_degree()) / N
             net_cx2.add_network_attribute(
-                key="Average In-Degree",
+                key=f"{keyprefix}Avg. In-Degree",
                 value=str(round(avg_in, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="Average Out-Degree",
+                key=f"{keyprefix}Avg. Out-Degree",
                 value=str(round(avg_out, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
         else:
             avg_deg = sum(d for _, d in networkx_graph.degree()) / N
             net_cx2.add_network_attribute(
-                key="Average Degree",
+                key=f"{keyprefix}Avg. Degree",
                 value=str(round(avg_deg, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
-
-    # --- disconnected ---
+    # --- disconnected or weakly connected but not strongly ---
     else:
-        # global average degree (total degree)
-        avg_deg = sum(d for _, d in networkx_graph.degree()) / N
-        net_cx2.add_network_attribute(
-            key="Average Degree",
-            value=str(round(avg_deg, 3)),
-            datatype=STRING_DATATYPE
-        )
-
-        if is_directed:
-            # Largest Weakly Connected Component
+        if not is_directed:
+            # global average degree (undirected)
+            avg_deg = sum(d for _, d in networkx_graph.degree()) / N
+            net_cx2.add_network_attribute(
+                key=f"{keyprefix}Avg. Degree",
+                value=str(round(avg_deg, 3)),
+                datatype=ndex2constants.STRING_DATATYPE
+            )
+        else:
+            # Directed: WCC metrics without suffix if only one WCC
             wccs = list(nx.weakly_connected_components(networkx_graph))
             wcc = max(wccs, key=len)
             G_wcc = networkx_graph.subgraph(wcc)
             n_wcc = G_wcc.number_of_nodes()
-            avg_wcc_deg = sum(d for _, d in G_wcc.degree()) / n_wcc
             avg_wcc_in  = sum(d for _, d in G_wcc.in_degree()) / n_wcc
             avg_wcc_out = sum(d for _, d in G_wcc.out_degree()) / n_wcc
+            wcc_key_in  = f"{keyprefix}Avg. In-Degree" if len(wccs) == 1 else f"{keyprefix}Avg. In-Degree (WCC)"
+            wcc_key_out = f"{keyprefix}Avg. Out-Degree" if len(wccs) == 1 else f"{keyprefix}Avg. Out-Degree (WCC)"
             net_cx2.add_network_attribute(
-                key="Average Degree (WCC)",
-                value=str(round(avg_wcc_deg, 3)),
-                datatype=STRING_DATATYPE
-            )
-            net_cx2.add_network_attribute(
-                key="Average In-Degree (WCC)",
+                key=wcc_key_in,
                 value=str(round(avg_wcc_in, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="Average Out-Degree (WCC)",
+                key=wcc_key_out,
                 value=str(round(avg_wcc_out, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
-
-            # Largest Strongly Connected Component
+            # Directed: SCC metrics
             sccs = list(nx.strongly_connected_components(networkx_graph))
             scc = max(sccs, key=len)
             G_scc = networkx_graph.subgraph(scc)
             n_scc = G_scc.number_of_nodes()
-            avg_scc_deg = sum(d for _, d in G_scc.degree()) / n_scc
             avg_scc_in  = sum(d for _, d in G_scc.in_degree()) / n_scc
             avg_scc_out = sum(d for _, d in G_scc.out_degree()) / n_scc
             net_cx2.add_network_attribute(
-                key="Average Degree (SCC)",
-                value=str(round(avg_scc_deg, 3)),
-                datatype=STRING_DATATYPE
-            )
-            net_cx2.add_network_attribute(
-                key="Average In-Degree (SCC)",
+                key=f"{keyprefix}Avg. In-Degree (SCC)",
                 value=str(round(avg_scc_in, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key="Average Out-Degree (SCC)",
+                key=f"{keyprefix}Avg. Out-Degree (SCC)",
                 value=str(round(avg_scc_out, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )
-
-        else:
-            # Largest Connected Component (undirected)
+        # Undirected disconnected: LCC metric
+        if not is_directed:
             comps = list(nx.connected_components(networkx_graph))
             lcc = max(comps, key=len)
             G_lcc = networkx_graph.subgraph(lcc)
             n_lcc = G_lcc.number_of_nodes()
             avg_lcc_deg = sum(d for _, d in G_lcc.degree()) / n_lcc
             net_cx2.add_network_attribute(
-                key="Average Degree (LCC)",
+                key=f"{keyprefix}Avg. Degree (LCC)",
                 value=str(round(avg_lcc_deg, 3)),
-                datatype=STRING_DATATYPE
+                datatype=ndex2constants.STRING_DATATYPE
             )

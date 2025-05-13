@@ -131,8 +131,6 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
     else:
         keyprefix = ''
 
-    net_cx2.remove_network_attribute('name')
-    
     net_cx2.add_network_attribute(
         key='Directed Network',
         value=str(isdirected),

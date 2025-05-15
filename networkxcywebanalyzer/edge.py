@@ -19,20 +19,15 @@ def add_edge_betweenness_centrality(net_cx2=None, networkx_graph=None, keyprefix
             )
 
     if networkx_graph.is_directed():
-        # Check if the graph is weakly connected (WCC = full graph)
+        # Disconnected directed graph → compute for LWCC and LSCC
         wccs = list(nx.weakly_connected_components(networkx_graph))
-        if len(wccs) == 1:
-            # Fully connected directed graph → use simple name
-            _compute_and_add(networkx_graph, "Edge Betweenness")
-        else:
-            # Disconnected directed graph → compute for LWCC and LSCC
-            largest_wcc = max(wccs, key=len)
-            _compute_and_add(networkx_graph.subgraph(largest_wcc), 
+        largest_wcc = max(wccs, key=len)
+        _compute_and_add(networkx_graph.subgraph(largest_wcc), 
                             "Edge Betweenness (WCC)")
             
-            sccs = list(nx.strongly_connected_components(networkx_graph))
-            largest_scc = max(sccs, key=len)
-            _compute_and_add(networkx_graph.subgraph(largest_scc), 
+        sccs = list(nx.strongly_connected_components(networkx_graph))
+        largest_scc = max(sccs, key=len)
+        _compute_and_add(networkx_graph.subgraph(largest_scc), 
                             "Edge Betweenness (SCC)")
     else:
         # Undirected graph

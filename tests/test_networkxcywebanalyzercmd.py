@@ -68,7 +68,7 @@ class TestNetworkxCyWebAnalyzer(unittest.TestCase):
         networkxcywebanalyzercmd.add_edge_betweenness_centrality(net_cx2=cx2_network,
                                                                 networkx_graph=networkx_graph)
         self.assertAlmostEqual(0.5,
-                               cx2_network.get_edges()[0]['v']['Edge Betweenness'])
+                               cx2_network.get_edges()[0]['v']['Edge Betweenness (WCC)'])
 
 """
     def test_run_infomap_no_file(self):

@@ -345,7 +345,8 @@ def add_average_shortest_path_lenght(net_cx2=None, networkx_graph=None, keyprefi
 
 def add_stress_node_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
     """
-    Calculates node Stress Centrality matching Cytoscape's implementation (raw counts).
+    Calculates node Stress Centrality matching Cytoscape's implementation (raw counts)
+    and uses networkx's 'nx.all_shortest_path' method.
 
     - Undirected:
       • If connected → on entire graph (no suffix, treat as undirected)

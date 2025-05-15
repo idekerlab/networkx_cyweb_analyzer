@@ -495,7 +495,7 @@ def add_centrality_node_attributes(net_cx2=None, networkx_graph=None, keyprefix=
 
 def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=None, keyprefix=''):
     """
-    Calculates and adds Neighborhood Connectivity as a node attribute to a CX2 network.
+    Calculates and adds Neighborhood Connectivity as a node attribute to a CX2 network, using NetworkX's built-in function.
 
     - Undirected:
       • If connected → on entire graph (no suffix)
@@ -507,10 +507,10 @@ def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=No
          1) largest strongly connected component (suffix " (SCC)")
          2) largest weakly   connected component (suffix " (WCC)")
 
-    Neighborhood connectivity is the average degree of each node’s neighbors.
+    Neighborhood connectivity is the average degree of each node's neighbors.
     Nodes outside these component(s) are left untouched.
     """
-    # Input validation (as in the original)
+    # Input validation
     if net_cx2 is None or networkx_graph is None:
         raise ValueError("Both network objects must be provided")
     if len(networkx_graph) == 0 or len(net_cx2.get_nodes()) == 0:
@@ -521,21 +521,19 @@ def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=No
     directed = networkx_graph.is_directed()
     components = []
 
-    # 1) Determine which subgraph(s) to process
+    # Determine which subgraph(s) to process
     if directed:
-        # Strongly connected?
         if nx.is_strongly_connected(networkx_graph):
             components.append((networkx_graph, ''))
         else:
-            # Largest SCC (treat as directed)
+            # Largest SCC (directed)
             scc_nodes = max(nx.strongly_connected_components(networkx_graph), key=len)
             components.append((networkx_graph.subgraph(scc_nodes), ' (SCC)'))
-            # Largest WCC (treat as undirected)
+            # Largest WCC (undirected)
             wcc_nodes = max(nx.weakly_connected_components(networkx_graph), key=len)
             wcc_subg = networkx_graph.subgraph(wcc_nodes).to_undirected()
             components.append((wcc_subg, ' (WCC)'))
     else:
-        # Undirected graph
         if nx.is_connected(networkx_graph):
             components.append((networkx_graph, ''))
         else:
@@ -543,19 +541,11 @@ def add_neighborhood_connectivity_node_attribute(net_cx2=None, networkx_graph=No
             lcc_nodes = max(nx.connected_components(networkx_graph), key=len)
             components.append((networkx_graph.subgraph(lcc_nodes), ' (LCC)'))
 
-    # 2) Compute and write Neighborhood Connectivity for each component
+    # Compute and write Neighborhood Connectivity using NetworkX
     for subg, suffix in components:
-        # Compute average neighbor-degree for nodes in subg
-        nc = {}
-        for node in subg.nodes():
-            neighbors = list(subg.neighbors(node))
-            if not neighbors:
-                nc[node] = 0.0
-            else:
-                total_deg = sum(subg.degree(nbr) for nbr in neighbors)
-                nc[node] = total_deg / len(neighbors)
+        # Use built-in average_neighbor_degree
+        nc = nx.average_neighbor_degree(subg)
 
-        # Write back only for nodes in this subgraph
         attr_name = f"Neighborhood Conn.{suffix}"
         for node_id, value in nc.items():
             net_cx2.add_node_attribute(

@@ -284,7 +284,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
         for node_id, val in clustering_coeff.items():
             net_cx2.add_node_attribute(
                 node_id=int(node_id),
-                key=f"{keyprefix} Clustering Coeff.{suffix}",
+                key=f"Clustering Coeff.{suffix}",
                 value=val,
                 datatype=ndex2constants.DOUBLE_DATATYPE
             )
@@ -292,7 +292,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
         for node_id, val in eigenvector.items():
             net_cx2.add_node_attribute(
                 node_id=int(node_id),
-                key=f"{keyprefix} Eigenvector{suffix}",
+                key=f"Eigenvector{suffix}",
                 value=val,
                 datatype=ndex2constants.DOUBLE_DATATYPE
             )
@@ -328,8 +328,7 @@ def add_multigraph_unsupported_metrics(net_cx2=None, networkx_graph=None, keypre
     # Default case (connected graph)
     compute_and_add_metrics(net_cx2, G_simple, G_w, keyprefix)
 
-def add_density_net_attrib(net_cx2=None, networkx_graph=None,
-                           keyprefix="", density_key="Network Density"):
+def add_density_net_attrib(net_cx2=None, networkx_graph=None, keyprefix="", density_key="Network Density"):
     """
     Calculates network density, automatically accounting for multi edges if present.
     - For disconnected networks, only computes density for the largest component
@@ -601,19 +600,19 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             avg_in = sum(d for _, d in networkx_graph.in_degree()) / N
             avg_out = sum(d for _, d in networkx_graph.out_degree()) / N
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. In-Degree",
+                key=f"Avg. In-Degree",
                 value=str(round(avg_in, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. Out-Degree",
+                key=f"Avg. Out-Degree",
                 value=str(round(avg_out, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
         else:
             avg_deg = sum(d for _, d in networkx_graph.degree()) / N
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. Degree",
+                key=f"Avg. Degree",
                 value=str(round(avg_deg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -623,7 +622,7 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             # global average degree (undirected)
             avg_deg = sum(d for _, d in networkx_graph.degree()) / N
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. Degree",
+                key=f"Avg. Degree",
                 value=str(round(avg_deg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -635,8 +634,8 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             n_wcc = G_wcc.number_of_nodes()
             avg_wcc_in  = sum(d for _, d in G_wcc.in_degree()) / n_wcc
             avg_wcc_out = sum(d for _, d in G_wcc.out_degree()) / n_wcc
-            wcc_key_in  = f"{keyprefix}Avg. In-Degree" if len(wccs) == 1 else f"{keyprefix}Avg. In-Degree (WCC)"
-            wcc_key_out = f"{keyprefix}Avg. Out-Degree" if len(wccs) == 1 else f"{keyprefix}Avg. Out-Degree (WCC)"
+            wcc_key_in  = f"Avg. In-Degree" if len(wccs) == 1 else f"Avg. In-Degree (WCC)"
+            wcc_key_out = f"Avg. Out-Degree" if len(wccs) == 1 else f"Avg. Out-Degree (WCC)"
             net_cx2.add_network_attribute(
                 key=wcc_key_in,
                 value=str(round(avg_wcc_in, 3)),
@@ -655,12 +654,12 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             avg_scc_in  = sum(d for _, d in G_scc.in_degree()) / n_scc
             avg_scc_out = sum(d for _, d in G_scc.out_degree()) / n_scc
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. In-Degree (SCC)",
+                key=f"Avg. In-Degree (SCC)",
                 value=str(round(avg_scc_in, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. Out-Degree (SCC)",
+                key=f"Avg. Out-Degree (SCC)",
                 value=str(round(avg_scc_out, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )
@@ -672,7 +671,7 @@ def add_avg_degree_net_attrib(net_cx2=None, networkx_graph=None, keyprefix=''):
             n_lcc = G_lcc.number_of_nodes()
             avg_lcc_deg = sum(d for _, d in G_lcc.degree()) / n_lcc
             net_cx2.add_network_attribute(
-                key=f"{keyprefix}Avg. Degree (LCC)",
+                key=f"Avg. Degree (LCC)",
                 value=str(round(avg_lcc_deg, 3)),
                 datatype=ndex2constants.STRING_DATATYPE
             )

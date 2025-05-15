@@ -138,71 +138,37 @@ def analyze_network(net_cx2, isdirected=False, namespace=None):
     )
 
     networkx_graph = get_networkx_graph_with_keys(net_cx2=net_cx2, isdirected=isdirected)
-    networkx_degree = networkx_graph.degree()
 
     ### Calls for Network-level metrics ###
     add_number_of_nodes(net_cx2=net_cx2, keyprefix=keyprefix)
-    
     add_number_of_edges(net_cx2=net_cx2, keyprefix=keyprefix)
-    
-    add_avg_neighbors_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) # includes calculation of components coverage (node %, etc)
-        
+    add_avg_neighbors_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) # includes calculation of components coverage (node %, etc)   
     add_avg_degree_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-
-    add_eccentricity_attribute(net_cx2=net_cx2,
-                               networkx_graph=networkx_graph,
-                               keyprefix=keyprefix) # Function located in node.py
-    
+    add_eccentricity_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) # Function located in node.py
     if networkx_graph.is_directed():
-        add_characteristic_path_length_net_attrib_directed(net_cx2=net_cx2,
-                               networkx_graph=networkx_graph,
-                               keyprefix=keyprefix)
+        add_characteristic_path_length_net_attrib_directed(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
     else:
-        add_characteristic_path_length_net_attrib(net_cx2=net_cx2,
-                               networkx_graph=networkx_graph,
-                               keyprefix=keyprefix)
-    
-    add_multigraph_unsupported_metrics(net_cx2=net_cx2,
-                                       networkx_graph=networkx_graph,
-                                       keyprefix=keyprefix)
-    
-    add_density_net_attrib(net_cx2=net_cx2,
-                                       networkx_graph=networkx_graph,
-                                       keyprefix=keyprefix)
-
-    add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                 keyprefix=keyprefix)
-    
-    add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                            keyprefix=keyprefix)
-
-    add_connected_components_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                            keyprefix=keyprefix)
+        add_characteristic_path_length_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_multigraph_unsupported_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_density_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_heterogeneity_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_centralization_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_connected_components_net_attrib(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
 
     ### Calls for Node-level metrics ###
-    #add_cytoscape_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_closeness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_multiedge_partner_node_attribute(net_cx2=net_cx2, keyprefix=keyprefix)
-    #add_self_loops_node_attribute(net_cx2=net_cx2, keyprefix=keyprefix)
-    
-    #add_cytoscape_stress_node_attribute_correct(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #exclude endpoints
-    
     add_degree_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
     add_comprehensive_topological_metrics(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    
-    #add_degree_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_betweenness_centrality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_cytoscape_radiality_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-    #add_cytoscape_topological_coefficient_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
-
+    add_average_shortest_path_lenght(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #incl. node radiality
+    add_centrality_node_attributes(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #incl. betweenness, closeness and degree centr.
+    add_stress_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix) #excl. endpoints
+    add_neighborhood_connectivity_node_attribute(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
+    add_self_loops_node_attribute(net_cx2=net_cx2, keyprefix=keyprefix)
+    add_multiedge_partner_node_attribute(net_cx2=net_cx2, keyprefix=keyprefix)
     
 
     ### Calls for Edge-level metrics ###
     if len(net_cx2.get_edges()) > 0:
-        add_edge_betweenness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph,
-                                       keyprefix=keyprefix)
+        add_edge_betweenness_centrality(net_cx2=net_cx2, networkx_graph=networkx_graph, keyprefix=keyprefix)
 
     return net_cx2.to_cx2()
 

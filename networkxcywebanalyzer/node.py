@@ -316,7 +316,7 @@ def add_average_shortest_path_lenght(net_cx2=None, networkx_graph=None, keyprefi
             diameter = 0
 
         # prepare attribute keys
-        asp_key = f"Average Shortest Path Length{suffix}"
+        asp_key = f"Avg. Shortest Path Length{suffix}"
         rad_key = f"Radiality{suffix}"
 
         # compute and write per-node

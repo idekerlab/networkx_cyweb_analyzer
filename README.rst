@@ -2,7 +2,7 @@
 Cytoscape Web 'NetworkX Analyzer (NXA)'
 ===================================================
 
-Uses Python 3.11 and NetworkX 3.4.2
+Uses Python 3.11 and NetworkX 3.5
 
 
 
